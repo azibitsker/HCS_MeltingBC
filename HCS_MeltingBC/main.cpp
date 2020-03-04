@@ -82,7 +82,8 @@ int main()
     else cout << "Unable to open file";
 
 
-    cout << "Hello World - New branch Hello World!" << endl;
+    cout << "Hello World - Hello!" << endl;
+    cout << "Hello World - Hello!" << endl;
 
     return 0;
 }

@@ -16,7 +16,7 @@ int main()
     qdot_i = 5e4; // W/m^2
 
     //---------------------Solid conduction----------------------------------------
-    const int Nx = 1600; // number of material cells
+    const int Nx = 3200; // number of material cells
     double T0 = 298; //initial material temperature [K]
 
     double f0[Nx + 2];  // Temperature solution array with Nx + 2 ghost cells
@@ -83,8 +83,7 @@ int main()
 
 
     cout << "Hello World - Hello!" << endl;
-    cout << "Hello World - Hello!" << endl;
-    cout << "Hello World - Hello!" << endl;
+
 
     return 0;
 }

@@ -3,7 +3,7 @@
 double SolidCond_Ray::HeatCondSolver(double* f0, double* x0, double* x, double dt, double qdot0, double sdot0, const int Nx, int ind_t) {
 
     double alpha; // thermal diffusivity
-    int Nmelt; // number of cells that have reached the melting temperature
+    double dx_melt; // number of cells that have reached the melting temperature
     double sdot = 0; // computed recession rate
     double sdot_diff = 1;
     vector<double> a(Nx + 2), b(Nx + 2), c(Nx + 2), d(Nx + 2);
@@ -25,10 +25,10 @@ double SolidCond_Ray::HeatCondSolver(double* f0, double* x0, double* x, double d
         //-----------------------------------------------------------------------
 
         // Count the number of cells that have reached the melting temperature
-        Nmelt = GetMeltedCells(f0, Nx + 2);
+        dx_melt = GetMeltedLength(f0,x0);
 
         // Compute recession rate based on the number of material cells that have reached the melting temperature
-        sdot = GetRecessionRate(x0, dt, Nmelt);  // [m/s] updated recession rate
+        sdot = GetRecessionRate(dt, dx_melt);  // [m/s] updated recession rate
 
         sdot_diff = abs(sdot - sdot0);
 
@@ -81,7 +81,7 @@ void SolidCond_Ray::GenerateGrid(double* x0, const int Nx) {
 // Update grid boundaries based on the computed recession rate sdot0
 void SolidCond_Ray::ContractGridBoundaries(double* x0, double* x, double sdot0, double dt, const int Nx, int ind_t) {
 
-    double dx_m = sdot0 * dt; // total length of the melted cells
+    double dx_melt = sdot0 * dt; // total length of the melted cells
     double L;
 
     L = x0[Nx - 2] - x0[1]; // current material length
@@ -89,7 +89,7 @@ void SolidCond_Ray::ContractGridBoundaries(double* x0, double* x, double sdot0, 
 //------- Update location of each cell boundary relative to the initial location at t=0------------------
     double dx0, dxj;
 
-    x[1] = x0[1] + dx_m; // update location of the recession front
+    x[1] = x0[1] + dx_melt; // update location of the recession front
     double Recession = x[1];
 
     if (Recession >= L0) {
@@ -100,7 +100,7 @@ void SolidCond_Ray::ContractGridBoundaries(double* x0, double* x, double sdot0, 
     for (int j = 2; j < Nx - 1; j++) {
 
         dx0 = x0[j] - x0[j - 1]; // compute material initial cell length
-        dxj = dx0 - dx0 / L * dx_m; // compute the new cell length
+        dxj = dx0 - dx0 / L * dx_melt; // compute the new cell length
 
         x[j] = x[j - 1] + dxj; // update location of each cell boundary
 
@@ -226,42 +226,40 @@ void  SolidCond_Ray::SolveTDMA(double* f0, vector<double>& a, vector<double>& b,
 
 }
 
-int SolidCond_Ray::GetMeltedCells(double* f0, const int Nx) {
+double SolidCond_Ray::GetMeltedLength(double* f0, double *x0) {
 
-    double Tj;
     int jm = 0;
+    int j = 1;
+    double dx_melt = 0;
 
-    // Find the cells that have reached the melting temperature and count the number of such cells
-    for (int j = 1; j < Nx - 1; j++) {
+    while (f0[jm+1] > Tm) {
 
-        Tj = f0[j];
-
-        if (Tj >= Tm) {
-
-            jm += 1;
-        }
-        else {
-
-            break;
-        }
-
+        jm += 1;    
+        
     }
 
-    return jm;
+    if (jm > 0) {
+
+        double xc1 = (x0[jm] + x0[jm + 1]) / 2; 
+        double xc2= (x0[jm+1] + x0[jm + 2]) / 2;
+        double m = (f0[jm] - f0[jm+1]) / (xc1-xc2); // linear slope between Tj<Tm and Tj>Tm
+        double x_m = (Tm - f0[jm+1]) / m + xc2; // location of Tm
+        double dx_inc = x_m - xc1; // incremental distance between Tm and Tj
+        
+        dx_melt = x_m - x0[1]; // total melted length
+
+    }
+    
+    return dx_melt;
 }
 
 
-double SolidCond_Ray::GetRecessionRate(double* x0, double dt, int Nmelt) {
-
+double SolidCond_Ray::GetRecessionRate(double dt, double dx_melt) {
 
     double sdot;
 
-
     // Compute the amount of recession
-    double dx_m;
-
-    dx_m = x0[Nmelt + 1] - x0[1];
-    sdot = dx_m / dt;
+      sdot = dx_melt / dt;
 
     return sdot;
 }

@@ -21,10 +21,10 @@ public:
     double HeatCondSolver(double* f0, double* x0, double* x, double dt, double qdot0, double sdot0, const int Nx, int t); //
     void GenerateGrid(double* x0, const int Nx);
     void ContractGridBoundaries(double* x0, double* x, double sdot0, double dt, const int Nx, int ind_t);
-    //void Get_abcd_coeff(double *x0,double *x,double *f0,double qdot0,double sdot0,double alpha, double dt,double *a,double *b,double *c,double *d,const int Nx,int ind_t);
     void Get_abcd_coeff(double* x0, double* x, double* f0, double qdot0, double sdot0, double alpha, double dt, vector<double>& a, vector<double>& b, vector<double>& c, vector<double>& d, const int Nx, int ind_t);
     void SolveTDMA(double* f0, vector<double>& a, vector<double>& b, vector<double>& c, vector<double>& d, const int Nx);
-    int GetMeltedCells(double* f0, const int Nx);
-    double GetRecessionRate(double* x0, double dt, int Nmelt);
+    double GetMeltedLength(double* f0, double* x0);
+    double GetRecessionRate(double dt, double dx_melt);
+	
 };
 #endif // SOLIDCONDRAY_H_INCLUDED

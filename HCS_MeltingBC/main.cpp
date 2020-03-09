@@ -16,9 +16,9 @@ int main()
     qdot_i = 5e4; // W/m^2
 
     //---------------------Solid conduction----------------------------------------
-    const int Nx = 3200; // number of material cells
+    const int Nx = 1600; // number of material cells
     double T0 = 298; //initial material temperature [K]
-
+    double sdot0;
     double f0[Nx + 2];  // Temperature solution array with Nx + 2 ghost cells
     for (int j = 0; j < Nx + 2; j++) { f0[j] = T0; }  // initialize f0
 
@@ -49,9 +49,12 @@ int main()
 
     for (int i = 1; i < Nt + 1; i++) {
 
-        double sdot0 = 0; // [m/s] the initial guess for recession rate
+        
         // Call function GetTemp to compute and update the solution vector f0
-        sdot0 = SolidTemp.HeatCondSolver(f0, x0, x, dt, qdot_i, sdot0, Nx, i);
+        ///////////////////////////////////////////////////////////////
+        sdot0 = SolidTemp.HeatCondSolver(f0, x0, x, dt, qdot_i, Nx, i);
+        ///////////////////////////////////////////////////////////////
+
 
         // Write temperature data into file
         for (int j = 1; j < 2; j++) { TempFile << f0[j] << " "; }
@@ -82,7 +85,7 @@ int main()
     else cout << "Unable to open file";
 
 
-    cout << "Hello World - Hello!" << endl;
+    cout << "Hello World!" << endl;
 
 
     return 0;

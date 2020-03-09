@@ -1,55 +1,46 @@
 #include "SolidCondRay.h"
 
-double SolidCond_Ray::HeatCondSolver(double* f0, double* x0, double* x, double dt, double qdot0, double sdot0, const int Nx, int ind_t) {
+double SolidCond_Ray::HeatCondSolver(double* f0, double* x0, double* x, double dt, double qdot0, const int Nx, int ind_t) {
 
     double alpha; // thermal diffusivity
-    double dx_melt; // number of cells that have reached the melting temperature
-    double sdot = 0; // computed recession rate
-    double sdot_diff = 1;
-    vector<double> a(Nx + 2), b(Nx + 2), c(Nx + 2), d(Nx + 2);
-    double Tw;
-    double sdot_saver[100] = { 0 };
-    int jj = 2;
+    double sdot; // computed recession rate  
+    double dT;
+    double sdot0 = 0;
+    vector<double> f(Nx + 2);
 
-    alpha = k / (rho * Cp);
+    alpha = k / (rho * Cp);    
 
-    // f0 and sdot are coupled. The loop converges when abs(sdot0-sdot)<Epsilon
-    while (sdot_diff > Eps_sdot) {
+    // Evaluate temperature at the next time step, vector f is updated
+    EvaluateTemp(x0, x, f0, f, qdot0, sdot0, alpha, dt, ind_t,Nx);
 
-        //Generate a,b,c,d vectors for TDMA Algorithm //
-        Get_abcd_coeff(x0, x, f0, qdot0, sdot0, alpha, dt, a, b, c, d, Nx + 2, ind_t);
-        //--------------------------------------------------
+    // Check if at least one of the material cells has reached melting temperature
+    if (CheckMelting(f)) {
 
-        //Solve linear system of equations and update temperature solution f0
-        SolveTDMA(f0, a, b, c, d, Nx + 2);
-        //-----------------------------------------------------------------------
+        dT = abs(f[1] - Tm);
 
-        // Count the number of cells that have reached the melting temperature
-        dx_melt = GetMeltedLength(f0,x0);
+        // Loop until the guess of sdot0 unsures enough recession to happen to reduce the q_in and cause Twall=Tmelting
+        while (dT > Eps_T) {
 
-        // Compute recession rate based on the number of material cells that have reached the melting temperature
-        sdot = GetRecessionRate(dt, dx_melt);  // [m/s] updated recession rate
-
-        sdot_diff = abs(sdot - sdot0);
-
-
-        if (sdot_diff > Eps_sdot) {
-
-            sdot_saver[jj] = sdot;
-            jj += 1;
-            Tw = f0[1];
-            //cout<<sdot0<<" ";
-            sdot0 = sdot; // update the guess for recession rate
+            // Compute recession rate based on the number of material cells that have reached the melting temperature
+            sdot = GetRecessionRate(f,x0,dt);  
+            sdot0 = (sdot0 + sdot) / 2; // guess sdot0 for the next evaluation of temperature profile
+             
+            // Contract grid x0 boundaries based on the comouted sdot0
             ContractGridBoundaries(x0, x, sdot0, dt, Nx + 3, ind_t); // array x is updated
+
+            EvaluateTemp(x0, x, f0, f, qdot0, sdot0, alpha, dt, ind_t, Nx); // reevaluate temperature with the updated sdot0 and x; vector f is updated
+            dT = abs(f[1] - Tm);     
+        
         }
-    }
 
-    // cout<<endl;
+        // Update  x0
+        for (int j = 0; j < Nx + 3; j++) { x0[j] = x[j]; }
 
-    sdot0 = sdot_saver[jj - 2];
-    ContractGridBoundaries(x0, x, sdot0, dt, Nx + 3, ind_t); // array x is updated
-    // Update  x0
-    for (int j = 0; j < Nx + 3; j++) { x0[j] = x[j]; }
+    }           
+    
+    // Update  f0
+    for (int j = 0; j < Nx + 2; j++) { f0[j] = f[j]; }
+    
 
     return sdot0;
 }
@@ -196,7 +187,7 @@ void SolidCond_Ray::Get_abcd_coeff(double* x0, double* x, double* f0, double qdo
 
 }
 // Solver linear system of equations using Thomas algorithm
-void  SolidCond_Ray::SolveTDMA(double* f0, vector<double>& a, vector<double>& b, vector<double>& c, vector<double>& d, const int Nx) {
+void  SolidCond_Ray::SolveTDMA(vector<double>& f, vector<double>& a, vector<double>& b, vector<double>& c, vector<double>& d, const int Nx) {
 
     // Solve system of eq. A*T=B*T_t0+C
 
@@ -217,33 +208,33 @@ void  SolidCond_Ray::SolveTDMA(double* f0, vector<double>& a, vector<double>& b,
     }
 
     // Compute solution vector f
-
-    f0[Nx - 1] = d_star[Nx - 1];
+    f[Nx - 1] = d_star[Nx - 1];
     for (int i = Nx - 2; i >= 0; i--) {
-        f0[i] = d_star[i] - c_star[i] * f0[i + 1];  // update the solution vector f0
+        f[i] = d_star[i] - c_star[i] * f[i + 1];  // update the solution vector f
     }
 
 
 }
 
-double SolidCond_Ray::GetMeltedLength(double* f0, double *x0) {
+double SolidCond_Ray::GetMeltedLength(vector<double>& f, double *x0) {
 
     int jm = 0;
     int j = 1;
     double dx_melt = 0;
 
-    while (f0[jm+1] > Tm) {
+    while (f[jm+1] > Tm) {
 
         jm += 1;    
         
     }
 
+    // Compute melted length using interpolation to find location of Tm
     if (jm > 0) {
 
         double xc1 = (x0[jm] + x0[jm + 1]) / 2; 
         double xc2= (x0[jm+1] + x0[jm + 2]) / 2;
-        double m = (f0[jm] - f0[jm+1]) / (xc1-xc2); // linear slope between Tj<Tm and Tj>Tm
-        double x_m = (Tm - f0[jm+1]) / m + xc2; // location of Tm
+        double m = (f[jm] - f[jm+1]) / (xc1-xc2); // linear slope between Tj<Tm and Tj>Tm
+        double x_m = (Tm - f[jm+1]) / m + xc2; // location of Tm
         double dx_inc = x_m - xc1; // incremental distance between Tm and Tj
         
         dx_melt = x_m - x0[1]; // total melted length
@@ -254,9 +245,13 @@ double SolidCond_Ray::GetMeltedLength(double* f0, double *x0) {
 }
 
 
-double SolidCond_Ray::GetRecessionRate(double dt, double dx_melt) {
+double SolidCond_Ray::GetRecessionRate(vector<double>& f, double* x0, double dt) {
 
     double sdot;
+    double dx_melt; // number of cells that have reached the melting temperature
+
+    // Count the number of cells that have reached the melting temperature
+    dx_melt = GetMeltedLength(f, x0);
 
     // Compute the amount of recession
       sdot = dx_melt / dt;
@@ -265,4 +260,35 @@ double SolidCond_Ray::GetRecessionRate(double dt, double dx_melt) {
 }
 
 
+void SolidCond_Ray::EvaluateTemp(double *x0, double *x, double *f0, vector<double>& f, double qdot0, double sdot0, double alpha, double dt, int ind_t, const int Nx) {
 
+    vector<double> a(Nx + 2), b(Nx + 2), c(Nx + 2), d(Nx + 2);
+
+    //Generate a,b,c,d vectors for TDMA Algorithm //
+    Get_abcd_coeff(x0, x, f0, qdot0, sdot0, alpha, dt, a, b, c, d, Nx + 2, ind_t);
+    //--------------------------------------------------
+
+    //Solve linear system of equations and update temperature solution f0
+    SolveTDMA(f, a, b, c, d, Nx + 2);
+    //-----------------------------------------------------------------------
+
+}
+
+bool SolidCond_Ray::CheckMelting(vector<double>& f) {
+
+    int jm = 0;
+
+    while (f[jm + 1] > Tm) {
+
+        jm += 1;
+
+    }
+
+    if (jm != 0) {
+        return true;
+    }
+    else {
+        return false;
+    }
+
+}

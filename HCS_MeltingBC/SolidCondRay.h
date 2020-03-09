@@ -15,16 +15,19 @@ class SolidCond_Ray {
     double k = 0.402, rho = 280, Cp = 983.9; // material properties
     double Tm = 800; // [K] material melting temperature
     double Qstar = 1e5; // [J/kgK] heat of ablation
-    double Eps_sdot = 1e-6;
+    double Eps_T = 1e-1;
 
 public:
-    double HeatCondSolver(double* f0, double* x0, double* x, double dt, double qdot0, double sdot0, const int Nx, int t); //
+    double HeatCondSolver(double* f0, double* x0, double* x, double dt, double qdot0, const int Nx, int t); 
     void GenerateGrid(double* x0, const int Nx);
     void ContractGridBoundaries(double* x0, double* x, double sdot0, double dt, const int Nx, int ind_t);
     void Get_abcd_coeff(double* x0, double* x, double* f0, double qdot0, double sdot0, double alpha, double dt, vector<double>& a, vector<double>& b, vector<double>& c, vector<double>& d, const int Nx, int ind_t);
-    void SolveTDMA(double* f0, vector<double>& a, vector<double>& b, vector<double>& c, vector<double>& d, const int Nx);
-    double GetMeltedLength(double* f0, double* x0);
-    double GetRecessionRate(double dt, double dx_melt);
+    void SolveTDMA(vector<double>& f, vector<double>& a, vector<double>& b, vector<double>& c, vector<double>& d, const int Nx);
+    void EvaluateTemp(double* x0, double* x, double* f0, vector<double> &f, double qdot0, double sdot0, double alpha, double dt, int ind_t, const int Nx);
+    bool CheckMelting(vector<double>& f);
+    double GetMeltedLength(vector<double>& f, double* x0);
+    double GetRecessionRate(vector<double>& f, double* x0,double dt);
+	
 	
 };
 #endif // SOLIDCONDRAY_H_INCLUDED

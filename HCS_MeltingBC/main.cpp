@@ -1,3 +1,4 @@
+
 // Main with constant number of cells
 /* 
 
@@ -162,7 +163,7 @@ int main()
     SolidTemp.GenerateUniformGrid(x, dx); // Generate initial grid with uniform spacing
 
     // Write initial temperature vector into .dat file
-    ofstream IterationsFile("N_iter.dat");
+     ofstream IterationsFile("N_iter.dat");
     IterationsFile << "i N_iter";
     IterationsFile << endl;
 
@@ -234,7 +235,4 @@ int main()
 
     return 0;
 }
-
-
-
 

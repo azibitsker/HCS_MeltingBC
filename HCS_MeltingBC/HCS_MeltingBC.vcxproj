@@ -138,11 +138,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="HCS_functions.cpp" />
+    <ClCompile Include="materialResponse.cc" />
+    <ClCompile Include="solidCondRay.cc" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="SolidCondRay.h" />
+    <ClInclude Include="materialResponse.h" />
+    <ClInclude Include="solidCondRay.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

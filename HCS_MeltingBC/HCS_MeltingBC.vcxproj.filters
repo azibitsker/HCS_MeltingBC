@@ -18,12 +18,18 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="HCS_functions.cpp">
+    <ClCompile Include="materialResponse.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="solidCondRay.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="SolidCondRay.h">
+    <ClInclude Include="materialResponse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="solidCondRay.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

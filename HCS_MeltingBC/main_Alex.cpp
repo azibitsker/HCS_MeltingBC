@@ -14,11 +14,11 @@
 int main(){   
 
     // ---------To be replaced by CFD simulation---------------------
-    double t = 30;// simulation time [sec]
-    double dt =0.01; // t / Nt; // s
-    double qdot_i=2e6;
+    double t = 40;// simulation time [sec]
+    double dt =0.125; // t / Nt; // s
+    double qdot_i;
     double ti = 0;
-    
+    qdot_i = 7.5e5; // W/m^2
 
     // Define incident heat flux vector "qdot_mr"
     const int numRays_mr = 1;
@@ -49,8 +49,8 @@ int main(){
     ofstream TimeFile("Time_C.dat");
     TimeFile << ti << endl;
     ofstream TempFile("Temp_C.dat");
-    for (int j = 1; j <2; j++) { TempFile << T0_mr << " "; }
-    TempFile << endl;
+    //for (int j = 1; j <2; j++) { TempFile << T0_mr << " "; }
+    //TempFile << endl;
     // -----------------------------------------------------------------------------
        
 
@@ -75,14 +75,13 @@ int main(){
         // Write the recession rate into file
         RecessionRateFile << mr.rays[0].sdot_out* 1e3 << endl;
         TimeFile << ti << endl;
-        for (int j = 1; j < 2; j++) { TempFile << mr.rays[0].f0[j]; }
-        TempFile << endl;
+   
         i += 1;
 
 
     }
 
-    //for (int j = 1; j < numPtsPerRay_mr + 1; j++) { TempFile << setprecision(20)<< mr.rays[0].f0[j] << " "; }
+    for (int j = 1; j < numPtsPerRay_mr + 1; j++) { TempFile << setprecision(20)<< mr.rays[0].f0[j] << " "; }
     //TempFile << endl;
 
     TempFile.close();

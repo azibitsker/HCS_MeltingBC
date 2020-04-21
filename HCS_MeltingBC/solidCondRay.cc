@@ -1,12 +1,16 @@
 #include "solidCondRay.h"
 #include "materialResponse.h"
 
-void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt) {
+void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt,ofstream & IterationsFile) {
 
-
-    double sdot; // computed recession rate  
-    double sdot0 = 0;
     
+    
+    double sdot=0; // computed recession rate  
+    double sdot0 = 0;
+    double sdot_g = 0;
+    double T0 = 0;
+    double T = 0;
+    double TT0 = 0;
     vector<double> f(Nx + 2);
 
     // Evaluate temperature at the next time step, vector f is updated
@@ -16,25 +20,60 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt) {
     if (CheckMelting(f)) {
 
         int N_iter = 0;
+        // Interval Halving method to find sdot such that Tw==Tm
+        
+        T0 = f[1];
+        sdot = GetRecessionRate(f, dt);
 
-        // Loop until the guess of sdot0 unsures enough recession to happen to reduce the q_in and cause Twall=Tmelting
-        while (f[1] < Tm - Eps_T || f[1]>Tm) {
+        ////////////////// Perform a check if sdot0 and sdot are from two sides of the true sdot solution//////////////////////
+        // If not, halve sdot until the requirement of interval halving method is fulfilled
+        
+        ContractGridBoundaries(sdot, dt, Nx + 3); // array x is updated
+        EvaluateTemp(f, qdot_in, sdot, dt, Nx); // reevaluate temperature with the updated sdot0 and x; vector f is updated
+        T = f[1];
+        TT0 = (T0 - Tm) * (T - Tm);
 
-            N_iter++;
-            // Compute recession rate based on the number of material cells that have reached the melting temperature       
+        if (TT0 > 0) {
 
-            sdot = GetRecessionRate(f, dt);
-            sdot0 = (sdot0 + sdot) / 2; // guess sdot0 for the next evaluation of temperature profile
+            while (TT0 > 0) {
+                sdot = sdot / 2; // halve sdot until requirement of the method is fulfilled
+                ContractGridBoundaries(sdot, dt, Nx + 3); // array x is updated
+                EvaluateTemp(f, qdot_in, sdot, dt, Nx); // reevaluate temperature with the updated sdot0 and x; vector f is updated
+                T = f[1];
+                TT0 = (T0 - Tm) * (T - Tm);
+            }
+                     
+        }   
+        ////////////////////////////////////////////////////////////////////
 
-            // Contract grid x0 boundaries based on the comouted sdot0
-            ContractGridBoundaries(sdot0, dt, Nx + 3); // array x is updated
+            sdot_g = (sdot0 + sdot) / 2; // initial guess, sdot_true is between sdot0 and sdot
+            ContractGridBoundaries(sdot_g, dt, Nx + 3); // array x is updated
+            EvaluateTemp(f, qdot_in, sdot_g, dt, Nx); // reevaluate temperature with the updated sdot0 and x; vector f is updated
+            T = f[1];
 
-            EvaluateTemp(f, qdot_in, sdot0, dt, Nx); // reevaluate temperature with the updated sdot0 and x; vector f is updated
+            // Loop until the guess of sdot0 unsures enough recession to happen to reduce the q_in and cause Twall=Tmelting
+            while (f[1] < Tm - Eps_T || f[1]>Tm) {
 
-        }
+                N_iter++;
 
-        //IterationsFile << ind_t << " " << N_iter;
-        //IterationsFile << endl;
+                TT0 = (T0 - Tm) * (T - Tm);
+
+                if (TT0 < 0) {
+                    sdot = sdot_g;
+                }
+                else {
+                    sdot0 = sdot_g;
+                    T0 = f[1];
+                }
+
+                sdot_g = (sdot0 + sdot) / 2; // guess sdot0 for the next evaluation of temperature profile
+                ContractGridBoundaries(sdot_g, dt, Nx + 3); // array x is updated
+                EvaluateTemp(f, qdot_in, sdot_g, dt, Nx); // reevaluate temperature with the updated sdot0 and x; vector f is updated
+                T = f[1];
+            }
+
+        IterationsFile <<N_iter;
+        IterationsFile << endl;
 
         // count how many cells are melted at each time step
         //double N_ratio;
@@ -45,15 +84,14 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt) {
         //NcellsFile << endl;
 
         // Update  x0
-        for (int j = 0; j < Nx + 3; j++) { x0[j] = x[j]; }
+            for (int j = 0; j < Nx + 3; j++) { x0[j] = x[j]; }               
 
     }
 
     // Update  f0
     for (int j = 0; j < Nx + 2; j++) { f0[j] = f[j]; }
-    sdot_out = sdot0;
-    // return sdot0;
-    
+    sdot_out = sdot_g;
+        
 }
 
 // Generate initial material grid including nodes for the two ghost cells using geometric series
@@ -61,6 +99,7 @@ void solidCond_Ray::GenerateGeomGrid(const int Nx) {
     // Generate the initial material grid. Fill out the array x0 with location of the
     // cells boundaries using geometric series
 
+     
     double dx0;
     double dxj;
 
@@ -76,26 +115,56 @@ void solidCond_Ray::GenerateGeomGrid(const int Nx) {
 
     x0.push_back(x0[Nx - 2] + dxj); // last ghost cell - its size is equal to the size of the last material cell
     
+
+    /* 10 geometric series grid with first cell divided into additional 10 geometric series grid
+    double dx01, dx02,dxj;
+
+    dx02 = L0 * (1 - F) / (1 - pow(F,10)); // initial grid cell size
+    dx01= dx02 * (1 - F) / (1 - pow(F, 10)); // initial grid cell size
+
+    x0.push_back(-dx01);
+    x0.push_back(0); // 1st ghost cell - its size is equal to the size of the first material cell
+
+    int j;
+    for (j = 2; j <12; j++) {
+
+        dxj = pow(F, j - 2) * dx01;
+        x0.push_back(x0[j - 1] + dxj); // space the cell boundaries using geometric series
+    }
+
+    int jj;
+    for (jj = j; jj < 21; jj++) {
+
+        dxj = pow(F, jj) * dx02;
+        x0.push_back(x0[jj - 1] + dxj); // space the cell boundaries using geometric series
+    }
+
+    x0.push_back(x0[jj-1] + dxj); // last ghost cell - its size is equal to the size of the last material cell
+
+    */
+
     for (int j = 0; j < Nx; j++) { x.push_back(x0[j]); }
     //cout<< "L0 = "<< x0[Nx-2]-x0[1]<< endl;
 
 }
 
-void solidCond_Ray::GenerateUniformGrid( int Nx) {
+void solidCond_Ray::GenerateUniformGrid(int Nx) {
     // Generate the initial material grid. Fill out the array x0 with location of the
     // cells boundaries using uniform series
-
-    double dx0;
-    dx0 = L0 / (Nx - 3); // initial grid cell size
+    
+    
+    double dx0;    
+    dx0 = L0/ (Nx - 3); // initial grid cell size
+        
     x0.push_back(-dx0);
 
-    for (int j = 1; j < Nx - 1; j++) {
+    for (int j = 1; j < Nx; j++) {
 
         x0.push_back(x0[j - 1] + dx0); // space the cell boundaries using uniform spacing
     }
 
-    x0.push_back(x0[Nx - 2] + dx0); // last ghost cell - its size is equal to the size of the last material cell
-    
+    //x0.push_back(x0[Nx - 2] + dx0); // last ghost cell - its size is equal to the size of the last material cell    
+       
     for (int j = 0; j < Nx; j++) { x.push_back(x0[j]); }
 
 }
@@ -115,8 +184,8 @@ void solidCond_Ray::ContractGridBoundaries(double sdot0, double dt, const int Nx
     double Recession = x[1];
 
     if (Recession >= L0) {
-        cout << "The whole material was melted away" << endl;
-        //return;
+        cout << "The whole material has melted away" << endl;
+        return;
     }
 
     for (int j = 2; j < Nx - 1; j++) {
@@ -328,13 +397,20 @@ bool solidCond_Ray::CheckMelting(vector<double>& f) {
 
 void solidCond_Ray::init(double T0, int numPts) {
 
+    //GenerateGeomGrid(numPts + 3); // Generate initial grid with uniform spacing
+    GenerateUniformGrid(numPts + 3);
+
     for (int ni = 0; ni < numPts+2; ++ni) {
+
+        //double T;
+        //double xc;
+        //xc = (x0[ni + 1] + x0[ni]) / 2;
+        //T = T0 + (Tm - T0) * exp(-4e-4 * xc / alpha);
 
         f0.push_back(T0);
     }
   
-    GenerateGeomGrid(numPts + 3); // Generate initial grid with uniform spacing
-    //GenerateUniformGrid(numPts + 3);
+    
 }
 
 

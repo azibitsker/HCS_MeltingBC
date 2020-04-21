@@ -12,18 +12,20 @@ class solidCond_Ray {
 
 public:
 
-    double L0 = 0.02; // initial material length
-    double F = 1.019; // cell size increase ratio
-    double k = 0.402, rho = 280, Cp = 983.9; // material properties
+    double L0 = 0.03; // initial material length
+    double F = 1.1; // cell size increase ratio
+    double k = 0.2, rho = 2000, Cp = 1000; // material properties
     double Tm = 800; // [K] material melting temperature
-    double Qstar = 1e5; // [J/kgK] heat of ablation
-    double Eps_T = 1;
+    double Qstar = 2e6; // [J/kgK] heat of ablation
+    double Eps_T = 1e-3;
     double alpha = k / (rho * Cp); // thermal diffusivity
     vector<double> f0, x0,x;
-    double sdot_out;
+    double sdot_out;   
+    double eta = 0.5;
+  
 
 public:
-    void HeatCondSolver(double qdot_in,int Nx, double dt);
+    void HeatCondSolver(double qdot_in,int Nx, double dt, ofstream& IterationsFile);
     void EvaluateTemp(vector<double>& f, double qdot0, double sdot0, double dt, const int Nx);
     void GenerateGeomGrid(const int Nx);
     void GenerateUniformGrid(int Nx);

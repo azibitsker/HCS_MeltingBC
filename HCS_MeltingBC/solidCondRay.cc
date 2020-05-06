@@ -1,9 +1,11 @@
 #include "solidCondRay.h"
 #include "materialResponse.h"
+#include "chemkin.h"
+#include "momentumBalance.h"
+#include "massBalance.h"
 
-void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt,ofstream & IterationsFile) {
 
-    
+void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt,ofstream & IterationsFile) {        
     
     double sdot=0; // computed recession rate  
     double sdot0 = 0;
@@ -13,9 +15,82 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt,ofstream & 
     double TT0 = 0;
     vector<double> f(Nx + 2);
 
-    // Evaluate temperature at the next time step, vector f is updated
-    EvaluateTemp(f, qdot_in, sdot0, dt, Nx);
+    chemkin SR;
+    massBalance MasB;
+    momentumBalance MomB;
 
+    vector<double> ps_c = { 0,0,0 }; // partial pressure of carbon species for sublimation
+    //vector<double> yk_f = { 20.95 / 100, 0.000001 / 100, 0.0314 / 100,0,0,0 }; // mass fraction of species in the fluid cell
+
+    vector<double> yk_f = { 1, 0, 0 ,0,0,0 }; // mass fraction of species in the fluid cell
+
+    // starting concentrations based on 
+    //start[0] = (475. * (20.95/100) / (8.314 * 650));
+    //start[1] = (475. * (0.000001/100) / (8.314 * 650));
+    //start[2] = (475. * (0.0314/100) / (8.314 * 650));
+
+    double p_eta = 5.*101350.; // stagnation pressure
+    double norm_yk0 = 0;
+    double conv_sdot;
+    double conv_yk_w = 1;
+    double mdot_c;
+    double Tw;
+
+    SR.init_OxidParam();
+    SR.init_SublimParam();
+    double yk0_w = 1. / SR.Ns;
+    MasB.init_MassBal(SR.Ns, yk0_w); // initialize initial species concentrations at the wall with a guess
+
+    while (conv_yk_w > 1e-5) {
+        conv_sdot = 1;
+        // convergence on sdot for the computed surface oxidation and sublimation
+        while (conv_sdot > 1e-5) {
+
+            // Evaluate temperature at the next time step, vector f is updated
+            EvaluateTemp(f, qdot_in, sdot0, dt, Nx);
+            Tw = f[1]; //wall temperature
+            SR.getOxidRates(Tw);
+            SR.getSublimRates(Tw, ps_c);
+
+            mdot_c = SR.mdot_oxid[1] * SR.M_c / SR.M_co + SR.mdot_oxid[2] * SR.M_c / SR.M_co2 +
+                SR.mdot_sub[0] + 2 * SR.mdot_sub[1] + 3 * SR.mdot_sub[2]; //[kg/m^2sec] carbon loss rate
+
+            sdot = mdot_c / SR.rho_c;
+            ContractGridBoundaries(sdot, dt, Nx + 3); // array x is updated
+
+            conv_sdot = abs(sdot - sdot0) / sdot;
+            sdot0 = sdot; // update the guess value (sdot + sdot0) / 2;            
+
+        }
+
+        SR.getSpeciesFlux(); // evaluates mdot_w and mdot_k      
+        MomB.solveMomentumBalance(SR, MasB, p_eta, Tw); // compute velocity,density and pressure at the wall
+        MasB.solveMassBal(SR, MomB.rho_w, yk_f, x); // solve for mass fractions in the ghost cell yk_ghost
+
+        // update partial pressures of carbon
+        for (int i = SR.N_ox - 1; i < SR.Ns; i++) {
+            ps_c[i - (SR.N_ox - 1)] = MasB.yk_w[i] * MomB.rho_w * SR.R0 / SR.Mw_s[i] * Tw;
+        }
+
+        // compute norm of yk_w to check the convergence
+        double norm_yk = 0;
+
+        for (int i = 0; i < SR.Ns; i++) {
+            norm_yk += MasB.yk_w[i] * MasB.yk_w[i];
+        }
+
+        conv_yk_w = abs(norm_yk - norm_yk0) / norm_yk;
+        norm_yk0 = norm_yk;
+
+    }
+
+        // Update  x0
+            for (int j = 0; j < Nx + 3; j++) { x0[j] = x[j]; }
+            sdot_out = sdot0;
+
+    // ---------------------
+    // Melting boundary condition
+    /* 
     // Check if at least one of the material cells has reached melting temperature
     if (CheckMelting(f)) {
 
@@ -91,7 +166,8 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt,ofstream & 
     // Update  f0
     for (int j = 0; j < Nx + 2; j++) { f0[j] = f[j]; }
     sdot_out = sdot_g;
-        
+    */    
+    // ---------------------------
 }
 
 // Generate initial material grid including nodes for the two ghost cells using geometric series
@@ -397,8 +473,8 @@ bool solidCond_Ray::CheckMelting(vector<double>& f) {
 
 void solidCond_Ray::init(double T0, int numPts) {
 
-    //GenerateGeomGrid(numPts + 3); // Generate initial grid with uniform spacing
-    GenerateUniformGrid(numPts + 3);
+    GenerateGeomGrid(numPts + 3); // Generate initial grid with geometric spacing
+    //GenerateUniformGrid(numPts + 3);
 
     for (int ni = 0; ni < numPts+2; ++ni) {
 

@@ -138,12 +138,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="chemkin.cc" />
+    <ClCompile Include="massBalance.cc" />
     <ClCompile Include="materialResponse.cc" />
+    <ClCompile Include="momentumBalance.cc" />
     <ClCompile Include="solidCondRay.cc" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="chemkin.h" />
+    <ClInclude Include="massBalance.h" />
     <ClInclude Include="materialResponse.h" />
+    <ClInclude Include="momentumBalance.h" />
     <ClInclude Include="solidCondRay.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

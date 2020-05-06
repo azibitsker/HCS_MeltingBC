@@ -12,7 +12,6 @@ using namespace std;
 class materialResponse {
   
 public:
-
     
     vector<solidCond_Ray>  rays;     
     

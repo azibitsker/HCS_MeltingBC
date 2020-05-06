@@ -19,9 +19,9 @@ public:
     double Qstar = 2e6; // [J/kgK] heat of ablation
     double Eps_T = 1e-3;
     double alpha = k / (rho * Cp); // thermal diffusivity
-    vector<double> f0, x0,x;
     double sdot_out;   
     double eta = 0.5;
+    vector<double> f0, x0, x;
   
 
 public:

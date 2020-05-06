@@ -24,12 +24,30 @@
     <ClCompile Include="solidCondRay.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="chemkin.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="momentumBalance.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="massBalance.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="materialResponse.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="solidCondRay.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="chemkin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="momentumBalance.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="massBalance.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

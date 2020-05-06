@@ -22,6 +22,10 @@ public:
     vector<double> f0, x0,x;
     double sdot_out;   
     double eta = 0.5;
+    double Eps = 0.9;
+    double sigma = 5.67e-8;
+    double T_inf = 300;
+
   
 
 public:
@@ -30,7 +34,7 @@ public:
     void GenerateGeomGrid(const int Nx);
     void GenerateUniformGrid(int Nx);
     void ContractGridBoundaries(double sdot0, double dt, const int Nx);
-    void Get_abcd_coeff(double qdot0, double sdot0, double dt, vector<double>& a, vector<double>& b, vector<double>& c, vector<double>& d, const int Nx);
+    void Get_abcd_coeff(vector<double>& f, double qdot0, double sdot0, double dt, vector<double>& a, vector<double>& b, vector<double>& c, vector<double>& d, const int Nx);
     void SolveTDMA(vector<double>& f, vector<double>& a, vector<double>& b, vector<double>& c, vector<double>& d, const int Nx);
     bool CheckMelting(vector<double>& f);
     double GetMeltedLength(vector<double>& f);

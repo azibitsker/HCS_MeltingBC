@@ -11,26 +11,32 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt,ofstream & 
     double T0 = 0;
     double T = 0;
     double TT0 = 0;
+    double Tw=0;
+    double conv_Tw = 1;
+    double Tw0 = 0;
     vector<double> f(Nx + 2);
+    // Update  f
+    for (int j = 0; j < Nx + 2; j++) { f[j] = f0[j]; }
 
     // Evaluate temperature at the next time step, vector f is updated
-    EvaluateTemp(f, qdot_in, sdot0, dt, Nx);
+    Tw0 = f0[1]; // (f0[0] + f0[1]) / 2;
+
+    EvaluateTemp(f, qdot_in, sdot0, dt, Nx);    
 
     // Check if at least one of the material cells has reached melting temperature
     if (CheckMelting(f)) {
 
-        int N_iter = 0;
-        // Interval Halving method to find sdot such that Tw==Tm
+        int N_iter = 0;                   
         
-        T0 = f[1];
         sdot = GetRecessionRate(f, dt);
 
+        // Interval Halving method to find sdot such that Tw==Tm 
         ////////////////// Perform a check if sdot0 and sdot are from two sides of the true sdot solution//////////////////////
         // If not, halve sdot until the requirement of interval halving method is fulfilled
-        
+        T0 = f[1];// (f[0] + f[1]) / 2;
         ContractGridBoundaries(sdot, dt, Nx + 3); // array x is updated
         EvaluateTemp(f, qdot_in, sdot, dt, Nx); // reevaluate temperature with the updated sdot0 and x; vector f is updated
-        T = f[1];
+        T = f[1];// (f[0] + f[1]) / 2;
         TT0 = (T0 - Tm) * (T - Tm);
 
         if (TT0 > 0) {
@@ -39,7 +45,7 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt,ofstream & 
                 sdot = sdot / 2; // halve sdot until requirement of the method is fulfilled
                 ContractGridBoundaries(sdot, dt, Nx + 3); // array x is updated
                 EvaluateTemp(f, qdot_in, sdot, dt, Nx); // reevaluate temperature with the updated sdot0 and x; vector f is updated
-                T = f[1];
+                T = f[1];// (f[0] + f[1]) / 2;
                 TT0 = (T0 - Tm) * (T - Tm);
             }
                      
@@ -49,10 +55,10 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt,ofstream & 
             sdot_g = (sdot0 + sdot) / 2; // initial guess, sdot_true is between sdot0 and sdot
             ContractGridBoundaries(sdot_g, dt, Nx + 3); // array x is updated
             EvaluateTemp(f, qdot_in, sdot_g, dt, Nx); // reevaluate temperature with the updated sdot0 and x; vector f is updated
-            T = f[1];
+            T = f[1];// (f[0] + f[1]) / 2;
 
             // Loop until the guess of sdot0 unsures enough recession to happen to reduce the q_in and cause Twall=Tmelting
-            while (f[1] < Tm - Eps_T || f[1]>Tm) {
+            while (f[1] < Tm - Eps_T || f[1] >Tm) {
 
                 N_iter++;
 
@@ -63,13 +69,13 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt,ofstream & 
                 }
                 else {
                     sdot0 = sdot_g;
-                    T0 = f[1];
+                    T0 = f[1];// (f[0] + f[1]) / 2;
                 }
 
                 sdot_g = (sdot0 + sdot) / 2; // guess sdot0 for the next evaluation of temperature profile
                 ContractGridBoundaries(sdot_g, dt, Nx + 3); // array x is updated
                 EvaluateTemp(f, qdot_in, sdot_g, dt, Nx); // reevaluate temperature with the updated sdot0 and x; vector f is updated
-                T = f[1];
+                T = f[1];// (f[0] + f[1]) / 2;
             }
 
         IterationsFile <<N_iter;
@@ -86,6 +92,19 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt,ofstream & 
         // Update  x0
             for (int j = 0; j < Nx + 3; j++) { x0[j] = x[j]; }               
 
+    }
+    else {
+
+        // Iterations to acount for surface re-radiation
+        while (conv_Tw > Eps_T) {
+
+            EvaluateTemp(f, qdot_in, sdot0, dt, Nx);
+            Tw = f[1];// (f[0] + f[1]) / 2;
+
+            conv_Tw = abs(Tw - Tw0) / Tw0;
+            Tw0 = Tw;
+
+        }
     }
 
     // Update  f0
@@ -202,7 +221,7 @@ void solidCond_Ray::ContractGridBoundaries(double sdot0, double dt, const int Nx
 }
 
 // Get a,b,c coefficients for Thomas algorithm
-void solidCond_Ray::Get_abcd_coeff(double qdot0, double sdot0, double dt, vector<double>& a, vector<double>& b, vector<double>& c, vector<double>& d, const int Nx) {
+void solidCond_Ray::Get_abcd_coeff(vector<double>& f, double qdot0, double sdot0, double dt, vector<double>& a, vector<double>& b, vector<double>& c, vector<double>& d, const int Nx) {
 
     double aW, aP, aE, aP0;
     double dxW, dxP, dxP0, dxE;
@@ -265,8 +284,12 @@ void solidCond_Ray::Get_abcd_coeff(double qdot0, double sdot0, double dt, vector
     // Compute "d" coefficient (d=B*f0+C)
     // --------------------------------------
     double qdot_in;
+    double qdot_rad;
+    double Tw = f[1];// (f[0] + f[1]) / 2;
 
-    qdot_in = -(qdot0 - rho * Qstar * sdot0) * (x[2] - x[0]) / (2 * k);
+    qdot_rad = Eps * sigma * (Tw*Tw*Tw*Tw  - T_inf* T_inf* T_inf* T_inf);
+
+    qdot_in = -(qdot0 - rho * Qstar * sdot0-qdot_rad) * (x[2] - x[0]) / (2 * k);
     //if (qdot_in > 0) {
        // cout << "int_t = " << ind_t << ": " "qdot0 < rho*Qstar*sdot0" << endl;
         //return;
@@ -321,7 +344,11 @@ double solidCond_Ray::GetMeltedLength(vector<double>& f) {
     int jm = 0;
     int j = 1;
     double dx_melt = 0;
-
+    double xc1;
+    double xc2;
+    double m;
+    double x_m;
+    double dx_inc;
     while (f[jm + 1] > Tm) {
 
         jm += 1;
@@ -331,11 +358,11 @@ double solidCond_Ray::GetMeltedLength(vector<double>& f) {
     // Compute melted length using interpolation to find location of Tm
     if (jm > 0) {
 
-        double xc1 = (x0[jm] + x0[jm + 1]) / 2;
-        double xc2 = (x0[jm + 1] + x0[jm + 2]) / 2;
-        double m = (f[jm] - f[jm + 1]) / (xc1 - xc2); // linear slope between Tj<Tm and Tj>Tm
-        double x_m = (Tm - f[jm + 1]) / m + xc2; // location of Tm
-        double dx_inc = x_m - xc1; // incremental distance between Tm and Tj
+        xc1 = (x0[jm] + x0[jm + 1]) / 2;
+        xc2 = (x0[jm + 1] + x0[jm + 2]) / 2;
+        m = (f[jm] - f[jm + 1]) / (xc1 - xc2); // linear slope between Tj<Tm and Tj>Tm
+        x_m = (Tm - f[jm + 1]) / m + xc2; // location of Tm
+        dx_inc = x_m - xc1; // incremental distance between Tm and Tj
 
         dx_melt = x_m - x0[1]; // total melted length
 
@@ -365,7 +392,7 @@ void solidCond_Ray::EvaluateTemp( vector<double>& f, double qdot0, double sdot0,
     vector<double> a(Nx + 2), b(Nx + 2), c(Nx + 2), d(Nx + 2);
 
     //Generate a,b,c,d vectors for TDMA Algorithm //
-    Get_abcd_coeff(qdot0, sdot0, dt, a, b, c, d, Nx + 2);
+    Get_abcd_coeff(f,qdot0, sdot0, dt, a, b, c, d, Nx + 2);
     //--------------------------------------------------
 
     //Solve linear system of equations and update temperature solution f0

@@ -17,10 +17,10 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt,ofstream & 
     vector<double> f(Nx + 2);
     // Update  f
     for (int j = 0; j < Nx + 2; j++) { f[j] = f0[j]; }
-
-    // Evaluate temperature at the next time step, vector f is updated
+    
     Tw0 = f0[1]; // (f0[0] + f0[1]) / 2;
 
+    // Evaluate temperature at the next time step, vector f is updated
     EvaluateTemp(f, qdot_in, sdot0, dt, Nx);    
 
     // Check if at least one of the material cells has reached melting temperature
@@ -93,19 +93,22 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt,ofstream & 
             for (int j = 0; j < Nx + 3; j++) { x0[j] = x[j]; }               
 
     }
+     
     else {
 
         // Iterations to acount for surface re-radiation
         while (conv_Tw > Eps_T) {
-
-            EvaluateTemp(f, qdot_in, sdot0, dt, Nx);
+            
             Tw = f[1];// (f[0] + f[1]) / 2;
 
             conv_Tw = abs(Tw - Tw0) / Tw0;
             Tw0 = Tw;
-
+            EvaluateTemp(f, qdot_in, sdot0, dt, Nx);
         }
+        
     }
+    
+        
 
     // Update  f0
     for (int j = 0; j < Nx + 2; j++) { f0[j] = f[j]; }

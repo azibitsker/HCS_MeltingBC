@@ -161,6 +161,8 @@ void chemkin::getSublimRates(double Tw,vector<double>& ps_c)
 		dc2dt= alpha_sub[1] * (pvs_c[1] - ps_c[1]) * sqrt(Mw_s[4] / (2 * pi * R0 * Tw));
 		dc3dt= alpha_sub[2] * (pvs_c[2] - ps_c[2]) * sqrt(Mw_s[5] / (2 * pi * R0 * Tw));
 
+		
+
 		//update values
 		//masscon_sub[0] += dt_loc * dcdt;
 		//masscon_sub[1] += dt_loc * dc2dt;

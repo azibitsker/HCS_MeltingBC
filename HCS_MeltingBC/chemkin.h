@@ -34,7 +34,7 @@ public:
 	// Simulation conditions
 	double B = 1e-5; //total site molar concentration [mol]/m^2	
 	double S = 0.5e-5; // initial concentration of available sites [mol/m^2]
-	double O_flux = 1e18 / NA; // [mol/m^2s] constant oxygen atoms flux	
+	double O_flux = 1e23 / NA; // [mol/m^2s] constant oxygen atoms flux	
 	double C_O0 = (O_flux) * 4 / sqrt(8 * kb * 1000 / pi / mo); // [mol/m^2] constant oxygen concentration as the surface
 	
 

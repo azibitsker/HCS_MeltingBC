@@ -5,7 +5,7 @@
 #include "massBalance.h"
 
 
-void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt,ofstream & IterationsFile) {        
+void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt) {        
     
     double sdot=0; // computed recession rate  
     double sdot0 = 0;
@@ -24,17 +24,15 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt,ofstream & 
 
     vector<double> yk_f = { 1, 0, 0 ,0,0,0 }; // mass fraction of species in the fluid cell
 
-    // starting concentrations based on 
-    //start[0] = (475. * (20.95/100) / (8.314 * 650));
-    //start[1] = (475. * (0.000001/100) / (8.314 * 650));
-    //start[2] = (475. * (0.0314/100) / (8.314 * 650));
-
-    double p_eta = 5.*101350.; // stagnation pressure
+    
+    double p_eta = 1e-2*101350.; // stagnation pressure
     double norm_yk0 = 0;
     double conv_sdot;
     double conv_yk_w = 1;
     double mdot_c;
     double Tw;
+    double norm_yk = 0;
+
 
     SR.init_OxidParam();
     SR.init_SublimParam();
@@ -43,6 +41,7 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt,ofstream & 
 
     while (conv_yk_w > 1e-5) {
         conv_sdot = 1;
+        norm_yk = 0;
         // convergence on sdot for the computed surface oxidation and sublimation
         while (conv_sdot > 1e-5) {
 
@@ -63,17 +62,19 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt,ofstream & 
 
         }
 
+        //cout << SR.mdot_sub[0] << " " << SR.mdot_sub[1] << " " << SR.mdot_sub[2] << " " << endl;
+
         SR.getSpeciesFlux(); // evaluates mdot_w and mdot_k      
         MomB.solveMomentumBalance(SR, MasB, p_eta, Tw); // compute velocity,density and pressure at the wall
         MasB.solveMassBal(SR, MomB.rho_w, yk_f, x); // solve for mass fractions in the ghost cell yk_ghost
 
         // update partial pressures of carbon
         for (int i = SR.N_ox - 1; i < SR.Ns; i++) {
-            ps_c[i - (SR.N_ox - 1)] = MasB.yk_w[i] * MomB.rho_w * SR.R0 / SR.Mw_s[i] * Tw;
+            ps_c[i - (SR.N_ox - 1)] = MasB.yk_w[i] * MomB.rho_w* SR.R0 / SR.Mw_s[i] * Tw;
         }
 
         // compute norm of yk_w to check the convergence
-        double norm_yk = 0;
+        
 
         for (int i = 0; i < SR.Ns; i++) {
             norm_yk += MasB.yk_w[i] * MasB.yk_w[i];
@@ -88,86 +89,13 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt,ofstream & 
             for (int j = 0; j < Nx + 3; j++) { x0[j] = x[j]; }
             sdot_out = sdot0;
 
-    // ---------------------
-    // Melting boundary condition
-    /* 
-    // Check if at least one of the material cells has reached melting temperature
-    if (CheckMelting(f)) {
+            // Update  f0
+            for (int j = 0; j < Nx + 2; j++) { f0[j] = f[j]; }
 
-        int N_iter = 0;
-        // Interval Halving method to find sdot such that Tw==Tm
-        
-        T0 = f[1];
-        sdot = GetRecessionRate(f, dt);
+            // Update  species mass flux
+            for (int j = 0; j < SR.Ns; j++) { mdot_sp[j] = SR.mdot_k[j]; }           
 
-        ////////////////// Perform a check if sdot0 and sdot are from two sides of the true sdot solution//////////////////////
-        // If not, halve sdot until the requirement of interval halving method is fulfilled
-        
-        ContractGridBoundaries(sdot, dt, Nx + 3); // array x is updated
-        EvaluateTemp(f, qdot_in, sdot, dt, Nx); // reevaluate temperature with the updated sdot0 and x; vector f is updated
-        T = f[1];
-        TT0 = (T0 - Tm) * (T - Tm);
-
-        if (TT0 > 0) {
-
-            while (TT0 > 0) {
-                sdot = sdot / 2; // halve sdot until requirement of the method is fulfilled
-                ContractGridBoundaries(sdot, dt, Nx + 3); // array x is updated
-                EvaluateTemp(f, qdot_in, sdot, dt, Nx); // reevaluate temperature with the updated sdot0 and x; vector f is updated
-                T = f[1];
-                TT0 = (T0 - Tm) * (T - Tm);
-            }
-                     
-        }   
-        ////////////////////////////////////////////////////////////////////
-
-            sdot_g = (sdot0 + sdot) / 2; // initial guess, sdot_true is between sdot0 and sdot
-            ContractGridBoundaries(sdot_g, dt, Nx + 3); // array x is updated
-            EvaluateTemp(f, qdot_in, sdot_g, dt, Nx); // reevaluate temperature with the updated sdot0 and x; vector f is updated
-            T = f[1];
-
-            // Loop until the guess of sdot0 unsures enough recession to happen to reduce the q_in and cause Twall=Tmelting
-            while (f[1] < Tm - Eps_T || f[1]>Tm) {
-
-                N_iter++;
-
-                TT0 = (T0 - Tm) * (T - Tm);
-
-                if (TT0 < 0) {
-                    sdot = sdot_g;
-                }
-                else {
-                    sdot0 = sdot_g;
-                    T0 = f[1];
-                }
-
-                sdot_g = (sdot0 + sdot) / 2; // guess sdot0 for the next evaluation of temperature profile
-                ContractGridBoundaries(sdot_g, dt, Nx + 3); // array x is updated
-                EvaluateTemp(f, qdot_in, sdot_g, dt, Nx); // reevaluate temperature with the updated sdot0 and x; vector f is updated
-                T = f[1];
-            }
-
-        IterationsFile <<N_iter;
-        IterationsFile << endl;
-
-        // count how many cells are melted at each time step
-        //double N_ratio;
-        //double dx_melt = sdot0 * dt;
-
-        //N_ratio = dx_melt / (x0[2] - x0[1]);
-        //NcellsFile << N_ratio;
-        //NcellsFile << endl;
-
-        // Update  x0
-            for (int j = 0; j < Nx + 3; j++) { x0[j] = x[j]; }               
-
-    }
-
-    // Update  f0
-    for (int j = 0; j < Nx + 2; j++) { f0[j] = f[j]; }
-    sdot_out = sdot_g;
-    */    
-    // ---------------------------
+   
 }
 
 // Generate initial material grid including nodes for the two ghost cells using geometric series
@@ -475,13 +403,9 @@ void solidCond_Ray::init(double T0, int numPts) {
 
     GenerateGeomGrid(numPts + 3); // Generate initial grid with geometric spacing
     //GenerateUniformGrid(numPts + 3);
+    mdot_sp.resize(6);
 
-    for (int ni = 0; ni < numPts+2; ++ni) {
-
-        //double T;
-        //double xc;
-        //xc = (x0[ni + 1] + x0[ni]) / 2;
-        //T = T0 + (Tm - T0) * exp(-4e-4 * xc / alpha);
+    for (int ni = 0; ni < numPts+2; ++ni) {        
 
         f0.push_back(T0);
     }

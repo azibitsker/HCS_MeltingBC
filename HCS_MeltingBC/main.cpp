@@ -14,9 +14,9 @@
 int main(){   
 
     // ---------To be replaced by CFD simulation---------------------
-    double t = 30;// simulation time [sec]
+    double t = 50;// simulation time [sec]
     double dt =0.01; // t / Nt; // s
-    double qdot_i=2e6;
+    double qdot_i=6e6;
     double ti = 0;
     
 
@@ -27,7 +27,7 @@ int main(){
     //-------------------------------------------------------------------
 
     int numPtsPerRay_mr = 20;
-    double T0_mr = 650;
+    double T0_mr = 800;
     int i = 1;
 
     //---------------------Solid conduction----------------------------------------
@@ -36,21 +36,17 @@ int main(){
     materialResponse mr;
     mr.Init_mr(numRays_mr, numPtsPerRay_mr, T0_mr);
 
-     // Write initial temperature vector into .dat file    
-    ofstream NcellsFile("N_cells.dat");
-    NcellsFile << "N_cells";
-    NcellsFile << endl;
-    ofstream IterationsFile("N_iter.dat");
-    ofstream BoundaryFile("X_C.dat");
-    for (int j = 1; j < 2; j++) { BoundaryFile << mr.rays[0].x0[j]* 1e3<<" "; }
-    BoundaryFile << endl;
-    ofstream RecessionRateFile("Sdot.dat");
-    RecessionRateFile << 0 << endl;
-    ofstream TimeFile("Time_C.dat");
-    TimeFile << ti << endl;
-    ofstream TempFile("Temp_C.dat");
-    for (int j = 1; j <2; j++) { TempFile << T0_mr << " "; }
-    TempFile << endl;
+     // Write results into data file       
+    int w = 15;
+
+    ofstream ResultsFile("Results.dat");
+    ResultsFile << left<< setw(w)<< "t" << setw(w) << "T" << setw(w) << "sdot_tot"<< setw(w) << "Xfront" << endl;
+    ResultsFile << left << setw(w) << ti << setw(w) << T0_mr << setw(w) << 0 << setw(w) << mr.rays[0].x0[1]* 1e3 << endl;
+
+    ofstream RatesFile("Rates.dat");
+    RatesFile << left << setw(w) <<"t"<< setw(w) << "sdot_tot" << setw(w) << "dodt" << setw(w) << "dcodt" << setw(w) << "dco2dt" << setw(w) <<"dcdt"<< setw(w) <<"dc2dt"<< setw(w) <<"dc3dt"<< endl;
+    RatesFile << left << setw(w) << ti << setw(w) << 0 << setw(w) << 0 << setw(w) << 0 << setw(w) << 0 << setw(w) << 0 << setw(w) << 0 << setw(w) << 0 << endl;
+    
     // -----------------------------------------------------------------------------
        
 
@@ -63,20 +59,13 @@ int main(){
         ti = i * dt;       
         
          // Solve heat conduction equation and assess recession rate 
-        mr.SolveCondRays(qdot_mr, numPtsPerRay_mr, dt, IterationsFile);
+        mr.SolveCondRays(qdot_mr, numPtsPerRay_mr, dt);
         ///////////////////////////////////////////////////////////////             
 
         // Write temperature data into file
-        //for (int j = 1; j < numPtsPerRay_mr+1; j++) { TempFile << mr.rays[0].f0[j] << " "; }
-        //TempFile << endl;
-        // Write grid boundary locations into file
-        for (int j = 1; j < 2; j++) { BoundaryFile << mr.rays[0].x0[j] * 1e3 << " "; }
-        BoundaryFile << endl;
-        // Write the recession rate into file
-        RecessionRateFile << mr.rays[0].sdot_out* 1e3 << endl;
-        TimeFile << ti << endl;
-        for (int j = 1; j < 2; j++) { TempFile << mr.rays[0].f0[j]; }
-        TempFile << endl;
+        ResultsFile << left << setw(15) << ti << " " << setw(15) << mr.rays[0].f0[1] << " " << setw(15) << mr.rays[0].sdot_out * 1e3<< setw(15) << mr.rays[0].x0[1] * 1e3 << endl;
+        RatesFile << left << setw(w) << ti << setw(15) << mr.rays[0].sdot_out * 1e3 << setw(w) << mr.rays[0].mdot_sp[0] << setw(w) << mr.rays[0].mdot_sp[1] << setw(w) << mr.rays[0].mdot_sp[2] << setw(w) << mr.rays[0].mdot_sp[3] << setw(w) << mr.rays[0].mdot_sp[4] << setw(w) << mr.rays[0].mdot_sp[5] << endl;
+
         i += 1;
 
 
@@ -84,16 +73,10 @@ int main(){
 
     //for (int j = 1; j < numPtsPerRay_mr + 1; j++) { TempFile << setprecision(20)<< mr.rays[0].f0[j] << " "; }
     //TempFile << endl;
+      
+    ResultsFile.close();
 
-    TempFile.close();
-    BoundaryFile.close();
-    RecessionRateFile.close();
-    TimeFile.close();
-    IterationsFile.close();
-    NcellsFile.close();
-
-
-    cout << "Hello World!" << endl;
+    std::cout << "Hello World!" << endl;
 
 
     return 0;

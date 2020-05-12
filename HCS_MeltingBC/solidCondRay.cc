@@ -15,6 +15,9 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt) {
     double TT0 = 0;
     vector<double> f(Nx + 2);
 
+    for (int j = 0; j < Nx + 2; j++) { f[j] = f0[j]; }
+    
+
     chemkin SR;
     massBalance MasB;
     momentumBalance MomB;
@@ -32,6 +35,12 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt) {
     double mdot_c;
     double Tw;
     double norm_yk = 0;
+
+    double conv_Tw;
+    double Tw0=0;
+
+    t_check = dt * i_check;
+    i_check++;
 
 
     SR.init_OxidParam();
@@ -58,9 +67,16 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt) {
             ContractGridBoundaries(sdot, dt, Nx + 3); // array x is updated
 
             conv_sdot = abs(sdot - sdot0) / sdot;
+
+            conv_Tw = abs(Tw - Tw0) / Tw;
+
+            Tw0 = Tw;
+
+
             sdot0 = sdot; // update the guess value (sdot + sdot0) / 2;            
 
         }
+        
 
         //cout << SR.mdot_sub[0] << " " << SR.mdot_sub[1] << " " << SR.mdot_sub[2] << " " << endl;
 
@@ -84,6 +100,8 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt) {
         norm_yk0 = norm_yk;
 
     }
+
+    //cout << "conv_Tw = " << conv_Tw << endl;
 
         // Update  x0
             for (int j = 0; j < Nx + 3; j++) { x0[j] = x[j]; }
@@ -206,7 +224,7 @@ void solidCond_Ray::ContractGridBoundaries(double sdot0, double dt, const int Nx
 }
 
 // Get a,b,c coefficients for Thomas algorithm
-void solidCond_Ray::Get_abcd_coeff(double qdot0, double sdot0, double dt, vector<double>& a, vector<double>& b, vector<double>& c, vector<double>& d, const int Nx) {
+void solidCond_Ray::Get_abcd_coeff(vector<double>& f,double qdot0, double sdot0, double dt, vector<double>& a, vector<double>& b, vector<double>& c, vector<double>& d, const int Nx) {
 
     double aW, aP, aE, aP0;
     double dxW, dxP, dxP0, dxE;
@@ -269,8 +287,14 @@ void solidCond_Ray::Get_abcd_coeff(double qdot0, double sdot0, double dt, vector
     // Compute "d" coefficient (d=B*f0+C)
     // --------------------------------------
     double qdot_in;
+    double qdot_rad;
+    double Tw = f[1];// (f[0] + f[1]) / 2;
 
-    qdot_in = -(qdot0 - rho * Qstar * sdot0) * (x[2] - x[0]) / (2 * k);
+    qdot_rad = Epsilon * sigma * (pow(Tw,4) - pow(T_inf,4));
+
+    qdot_in = -(qdot0 - rho * Qstar * sdot0 - qdot_rad) * (x[2] - x[0]) / (2 * k);
+    //qdot_in = -(qdot0 - rho * Qstar * sdot0) * (x[2] - x[0]) / (2 * k);
+
     //if (qdot_in > 0) {
        // cout << "int_t = " << ind_t << ": " "qdot0 < rho*Qstar*sdot0" << endl;
         //return;
@@ -369,7 +393,7 @@ void solidCond_Ray::EvaluateTemp( vector<double>& f, double qdot0, double sdot0,
     vector<double> a(Nx + 2), b(Nx + 2), c(Nx + 2), d(Nx + 2);
 
     //Generate a,b,c,d vectors for TDMA Algorithm //
-    Get_abcd_coeff(qdot0, sdot0, dt, a, b, c, d, Nx + 2);
+    Get_abcd_coeff(f, qdot0, sdot0, dt, a, b, c, d, Nx + 2);
     //--------------------------------------------------
 
     //Solve linear system of equations and update temperature solution f0

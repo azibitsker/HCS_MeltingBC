@@ -14,7 +14,7 @@
 int main(){   
 
     // ---------To be replaced by CFD simulation---------------------
-    double t = 50;// simulation time [sec]
+    double t = 70;// simulation time [sec]
     double dt =0.01; // t / Nt; // s
     double qdot_i=6e6;
     double ti = 0;
@@ -37,14 +37,14 @@ int main(){
     mr.Init_mr(numRays_mr, numPtsPerRay_mr, T0_mr);
 
      // Write results into data file       
-    int w = 15;
+    int w = 20;
 
     ofstream ResultsFile("Results.dat");
-    ResultsFile << left<< setw(w)<< "t" << setw(w) << "T" << setw(w) << "sdot_tot"<< setw(w) << "Xfront" << endl;
+    ResultsFile << left<< setw(w)<< "t [sec]" << setw(w) << "T [K]" << setw(w) << "sdot_tot [mm/s]"<< setw(w) << "Xfront [mm]" << endl;
     ResultsFile << left << setw(w) << ti << setw(w) << T0_mr << setw(w) << 0 << setw(w) << mr.rays[0].x0[1]* 1e3 << endl;
 
     ofstream RatesFile("Rates.dat");
-    RatesFile << left << setw(w) <<"t"<< setw(w) << "sdot_tot" << setw(w) << "dodt" << setw(w) << "dcodt" << setw(w) << "dco2dt" << setw(w) <<"dcdt"<< setw(w) <<"dc2dt"<< setw(w) <<"dc3dt"<< endl;
+    RatesFile << left << setw(w) <<"t [s]"<< setw(w) << "sdot_tot [mm/s]" << setw(w) << "dodt [kg/m^2s]" << setw(w) << "dcodt [kg/m^2s]" << setw(w) << "dco2dt [kg/m^2s]" << setw(w) <<"dcdt [kg/m^2s]"<< setw(w) <<"dc2dt [kg/m^2s]"<< setw(w) <<"dc3dt [kg/m^2s]"<< endl;
     RatesFile << left << setw(w) << ti << setw(w) << 0 << setw(w) << 0 << setw(w) << 0 << setw(w) << 0 << setw(w) << 0 << setw(w) << 0 << setw(w) << 0 << endl;
     
     // -----------------------------------------------------------------------------

@@ -17,7 +17,7 @@ public:
     //double k = 0.2, rho = 2000, Cp = 1000; // material properties
     double Tavg = 1000;
     double k;
-    double rho = 1775;
+    double rho_s = 1775;
     double Cp;
     double Tm = 800; // [K] material melting temperature
     double Qstar = 2e6; // [J/kgK] heat of ablation

@@ -31,10 +31,10 @@ void chemkin::init_chemParam(){
 void chemkin::getOxidRates(double Tw) {
 	
 	double dodt, dcodt, dco2dt;	
-	double O0 = 1e23 / NA;
-	double Fox = 1e23;
+	//double Fox = 1e23 / NA;
+	
 
-	C_O0 = O0 * 4 / sqrt(8 * kb * 1000 / pi / mo);
+	C_O0 = Fox * 4 / sqrt(8 * kb * 1000 / pi / mo);
 
 	//rate constants
 	double k1 = (1. / (4. * B)) * sqrt((8. * kb * Tw) / (pi * mo));

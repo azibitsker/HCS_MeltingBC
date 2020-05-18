@@ -59,7 +59,7 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt) {
             // Compute the actuall carbon loss flux from graphite surface
             mdot_c = SR.mdot_k[1] * SR.M_c / SR.M_co + SR.mdot_k[2] * SR.M_c / SR.M_co2 +
                      SR.mdot_k[3] + SR.mdot_k[4] +  SR.mdot_k[5]; //[kg/m^2sec] 
-            sdot = mdot_c / SR.rho_c;
+            sdot = mdot_c / rho_s;
 
             ContractGridBoundaries(sdot, dt, Nx + 3); // array x is updated
 
@@ -245,7 +245,7 @@ void solidCond_Ray::Get_abcd_coeff(vector<double>& f,double qdot0, double sdot0,
         }
         k = 100 / (0.68 + 9.82e-4 * Tj);
         Cp = 1000 * (-0.6853 + 5.9199e-3 * Tj - 5.5271e-6 * pow(Tj, 2) + 2.6677e-9 * pow(Tj, 3) - 6.4429e-13 * pow(Tj, 4) + 6.1622e-17 * pow(Tj, 5));
-        alpha = k / (rho * Cp); 
+        alpha = k / (rho_s * Cp); 
         //-------------------------------------------------------------------------------------------------------------------------
 
         // Compute "a" coefficient
@@ -303,7 +303,7 @@ void solidCond_Ray::Get_abcd_coeff(vector<double>& f,double qdot0, double sdot0,
     k = 100 / (0.68 + 9.82e-4 * Tj); 
     Tw = f[1]; // current wall temperature
     qdot_rad = Epsilon * sigma * (pow(Tw,4) - pow(T_inf,4));
-    qdot_in = -(qdot0 - rho * Qstar * sdot0 - qdot_rad) * (x[2] - x[0]) / (2 * k);   
+    qdot_in = -(qdot0 - rho_s * Qstar * sdot0 - qdot_rad) * (x[2] - x[0]) / (2 * k);   
 
     d[0] = qdot_in;    
     d[Nx - 1] = 0;

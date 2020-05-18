@@ -15,8 +15,7 @@ class momentumBalance
 public:
 
 	// conditions at the wall
-	double U_w, rho_w, p_w;
-	double Mw_all; // molar mass of all species
+	double U_w, rho_w, p_w;	
 
 
 public:

@@ -21,9 +21,7 @@ public:
 public:
 
 	void init_MassBal(int Ns,double yk_0);
-	void solveMassBal(chemkin SR, double rho_w, vector<double> yk_f, vector<double> x);
-
-
+	void solveMassBal(chemkin SR, double rho_w, vector<double> x);
 
 };
 

@@ -16,16 +16,17 @@ public:
     double F = 1.1; // cell size increase ratio
     //double k = 0.2, rho = 2000, Cp = 1000; // material properties
     double Tavg = 1000;
-    double k = 100 / (0.68 + 9.82e-4 * Tavg);
+    double k;
     double rho = 1775;
-    double Cp = 1000 * (-0.6853 + 5.9199e-3 * Tavg - 5.5271e-6 * pow(Tavg,2) + 2.6677e-9 * pow(Tavg, 3) - 6.4429e-13 * pow(Tavg, 4) + 6.1622e-17 * pow(Tavg, 5));
+    double Cp;
     double Tm = 800; // [K] material melting temperature
     double Qstar = 2e6; // [J/kgK] heat of ablation
     double Eps_T = 1e-3;
-    double alpha = k / (rho * Cp); // thermal diffusivity
+    double alpha; // thermal diffusivity
     double sdot_out;   
     double eta = 0.5;
-    vector<double> f0, x0, x, mdot_sp;
+    vector<double> f0, x0, x, mdot_k_out, yk_w_out;
+    
 
     // Radiation parameters
     double Epsilon = 0.9;

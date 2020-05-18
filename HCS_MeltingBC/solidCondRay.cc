@@ -7,34 +7,22 @@
 
 void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt) {        
     
-    double sdot=0; // computed recession rate  
-    double sdot0 = 0;
-    double sdot_g = 0;
-    double T0 = 0;
-    double T = 0;
-    double TT0 = 0;
-    vector<double> f(Nx + 2);
+    double sdot; // computed recession rate      
+    double mdot_c; // carbon flux from the surface
+    double Tw; // wall temperature
 
-    for (int j = 0; j < Nx + 2; j++) { f[j] = f0[j]; }
-    
-
-    chemkin SR;
-    massBalance MasB;
-    momentumBalance MomB;
-
-    vector<double> ps_c = { 0,0,0 }; // partial pressure of carbon species for sublimation
-    //vector<double> yk_f = { 20.95 / 100, 0.000001 / 100, 0.0314 / 100,0,0,0 }; // mass fraction of species in the fluid cell
-
-    vector<double> yk_f = { 1, 0, 0 ,0,0,0 }; // mass fraction of species in the fluid cell
-
-    
+    vector<double> f(Nx + 2); // current temperature state vector
+    for (int j = 0; j < Nx + 2; j++) { 
+        f[j] = f0[j];
+    }  
+        
     double p_eta = 1e-2*101350.; // stagnation pressure
+
+    // convergence parameters
     double norm_yk0 = 0;
     double conv_sdot;
-    double conv_yk_w = 1;
-    double mdot_c;
-    double Tw;
-    double norm_yk = 0;
+    double conv_yk_w = 1;   
+    double norm_yk;
 
     double conv_Tw;
     double Tw0=0;
@@ -42,11 +30,19 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt) {
     t_check = dt * i_check;
     i_check++;
 
+    chemkin SR;
+    massBalance MasB;
+    momentumBalance MomB;
 
-    SR.init_OxidParam();
-    SR.init_SublimParam();
-    double yk0_w = 1. / SR.Ns;
+    // initial guesses
+    double sdot0 = 0;
+    double yk0_w = 1. / SR.Ns; // mass fractions at the wall
+    vector<double> ps_c = { 0,0,0 }; // partial pressure of carbon species for sublimation   
+
+    // initialize 
+    SR.init_chemParam();        
     MasB.init_MassBal(SR.Ns, yk0_w); // initialize initial species concentrations at the wall with a guess
+    
 
     while (conv_yk_w > 1e-5) {
         conv_sdot = 1;
@@ -57,41 +53,38 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt) {
             // Evaluate temperature at the next time step, vector f is updated
             EvaluateTemp(f, qdot_in, sdot0, dt, Nx);
             Tw = f[1]; //wall temperature
-            SR.getOxidRates(Tw);
-            SR.getSublimRates(Tw, ps_c);
+            SR.getOxidRates(Tw); // update vector mdot_k
+            SR.getSublimRates(Tw, ps_c); // update values in vector mdot_k
 
-            mdot_c = SR.mdot_oxid[1] * SR.M_c / SR.M_co + SR.mdot_oxid[2] * SR.M_c / SR.M_co2 +
-                SR.mdot_sub[0] + 2 * SR.mdot_sub[1] + 3 * SR.mdot_sub[2]; //[kg/m^2sec] carbon loss rate
-
+            // Compute the actuall carbon loss flux from graphite surface
+            mdot_c = SR.mdot_k[1] * SR.M_c / SR.M_co + SR.mdot_k[2] * SR.M_c / SR.M_co2 +
+                     SR.mdot_k[3] + SR.mdot_k[4] +  SR.mdot_k[5]; //[kg/m^2sec] 
             sdot = mdot_c / SR.rho_c;
+
             ContractGridBoundaries(sdot, dt, Nx + 3); // array x is updated
 
             conv_sdot = abs(sdot - sdot0) / sdot;
-
             conv_Tw = abs(Tw - Tw0) / Tw;
 
             Tw0 = Tw;
-
-
             sdot0 = sdot; // update the guess value (sdot + sdot0) / 2;            
 
-        }
-        
+        }        
 
         //cout << SR.mdot_sub[0] << " " << SR.mdot_sub[1] << " " << SR.mdot_sub[2] << " " << endl;
 
-        SR.getSpeciesFlux(); // evaluates mdot_w and mdot_k      
+        SR.getSpeciesFlux(); // evaluates mdot_w    
         MomB.solveMomentumBalance(SR, MasB, p_eta, Tw); // compute velocity,density and pressure at the wall
-        MasB.solveMassBal(SR, MomB.rho_w, yk_f, x); // solve for mass fractions in the ghost cell yk_ghost
+        MasB.solveMassBal(SR, MomB.rho_w, x); // solve for mass fractions in the ghost cell yk_ghost and yk_w
 
         // update partial pressures of carbon
-        for (int i = SR.N_ox - 1; i < SR.Ns; i++) {
-            ps_c[i - (SR.N_ox - 1)] = MasB.yk_w[i] * MomB.rho_w* SR.R0 / SR.Mw_s[i] * Tw;
+        for (int i = SR.N_sub; i < SR.N_sub+3; i++) {
+
+            ps_c[i - SR.N_sub] = MasB.yk_w[i] * MomB.rho_w* SR.R0 / SR.Mw_s[i] * Tw;
+
         }
 
         // compute norm of yk_w to check the convergence
-        
-
         for (int i = 0; i < SR.Ns; i++) {
             norm_yk += MasB.yk_w[i] * MasB.yk_w[i];
         }
@@ -101,17 +94,21 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt) {
 
     }
 
-    //cout << "conv_Tw = " << conv_Tw << endl;
+       //cout << "conv_Tw = " << conv_Tw << endl;
 
-        // Update  x0
-            for (int j = 0; j < Nx + 3; j++) { x0[j] = x[j]; }
-            sdot_out = sdot0;
+       // Update  x0
+       for (int j = 0; j < Nx + 3; j++) { x0[j] = x[j]; }
+       sdot_out = sdot0;
 
-            // Update  f0
-            for (int j = 0; j < Nx + 2; j++) { f0[j] = f[j]; }
+       // Update  f0
+       for (int j = 0; j < Nx + 2; j++) { f0[j] = f[j]; }
 
-            // Update  species mass flux
-            for (int j = 0; j < SR.Ns; j++) { mdot_sp[j] = SR.mdot_k[j]; }           
+       // Update  species mass flux
+       mdot_k_out.resize(SR.Ns);
+       yk_w_out.resize(SR.Ns);
+
+       for (int j = 0; j < SR.Ns; j++) { mdot_k_out[j] = SR.mdot_k[j]; }
+       for (int j = 0; j < SR.Ns; j++) { yk_w_out[j] = MasB.yk_w[j]; }
 
    
 }
@@ -229,87 +226,86 @@ void solidCond_Ray::Get_abcd_coeff(vector<double>& f,double qdot0, double sdot0,
     double aW, aP, aE, aP0;
     double dxW, dxP, dxP0, dxE;
     double Uw, Ue;
+    double Tj;
+    double qdot_in;
+    double qdot_rad;
+    double Tw;
 
     // Compute "a" coefficient
     // --------------------------------------
-    a[0] = 0;
+    
     for (int j = 1; j < Nx - 1; j++) {
 
+        // Precompute material properties k,Cp,alpha
+        //---------------------------------------------------------------------------------------------------
+        Tj = f[j];
+        if (Tj > 3000) {
+
+            Tj = 3000;
+        }
+        k = 100 / (0.68 + 9.82e-4 * Tj);
+        Cp = 1000 * (-0.6853 + 5.9199e-3 * Tj - 5.5271e-6 * pow(Tj, 2) + 2.6677e-9 * pow(Tj, 3) - 6.4429e-13 * pow(Tj, 4) + 6.1622e-17 * pow(Tj, 5));
+        alpha = k / (rho * Cp); 
+        //-------------------------------------------------------------------------------------------------------------------------
+
+        // Compute "a" coefficient
+        // --------------------------------------
         dxW = x[j] - x[j - 1]; // west cell length
         dxP = x[j + 1] - x[j]; // central cell length
         Uw = (x[j] - x0[j]) / dt; // velocity of the west boundary of the P cell
-
         aW = Uw / (2 * alpha) - 2 / (dxW + dxP);
-
         a[j] = aW;
 
-    }
-    a[Nx - 1] = 1;
-    // -------------------------------------
-
-    // Compute "b" coefficient
-    // ------------------------------------
-    b[0] = -1;
-
-    for (int j = 1; j < Nx - 1; j++) {
-
+        // Compute "b" coefficient
+        // ------------------------------------
         dxW = x[j] - x[j - 1]; // west cell length
         dxP = x[j + 1] - x[j]; // central cell length
         dxE = x[j + 2] - x[j + 1]; // east cell length
         Uw = (x[j] - x0[j]) / dt; // velocity of the west boundary of the P cell
         Ue = (x[j + 1] - x0[j + 1]) / dt; // velocity of the east boundary of the P cell
-
         aP = 2 / (dxE + dxP) + 2 / (dxW + dxP) - Ue / (2 * alpha) + Uw / (2 * alpha) + dxP / (dt * alpha);
-
         b[j] = aP;
 
-    }
-    b[Nx - 1] = -1;
-    // -----------------------------------------
-
-    // Compute "c" coefficient
-    // ---------------------------------
-    c[0] = 1;
-
-    for (int j = 1; j < Nx - 1; j++) {
-
+        // Compute "c" coefficient
+        // ---------------------------------
         dxE = x[j + 2] - x[j + 1]; //  east cell length
         dxP = x[j + 1] - x[j]; // central cell length
         Ue = (x[j + 1] - x0[j + 1]) / dt; // velocity of the east boundary of the cell
-
         aE = -2 / (dxE + dxP) - Ue / (2 * alpha);
-
         c[j] = aE;
 
-    }
-    c[Nx - 1] = 0;
-
-    // Compute "d" coefficient (d=B*f0+C)
-    // --------------------------------------
-    double qdot_in;
-    double qdot_rad;
-    double Tw = f[1];// (f[0] + f[1]) / 2;
-
-    qdot_rad = Epsilon * sigma * (pow(Tw,4) - pow(T_inf,4));
-
-    qdot_in = -(qdot0 - rho * Qstar * sdot0 - qdot_rad) * (x[2] - x[0]) / (2 * k);
-    //qdot_in = -(qdot0 - rho * Qstar * sdot0) * (x[2] - x[0]) / (2 * k);
-
-    //if (qdot_in > 0) {
-       // cout << "int_t = " << ind_t << ": " "qdot0 < rho*Qstar*sdot0" << endl;
-        //return;
-    //}
-    d[0] = qdot_in;
-
-    for (int j = 1; j < Nx - 1; j++) {
-
+        // Compute "d" coefficient (d=B*f0+C)
+        // --------------------------------------
         dxP0 = x0[j + 1] - x0[j]; // central cell length at previous time
-
         aP0 = dxP0 / (dt * alpha);
-
         d[j] = aP0 * f0[j];
 
     }
+
+    a[0] = 0;
+    a[Nx - 1] = 1;
+    // -------------------------------------
+    
+    b[0] = -1;    
+    b[Nx - 1] = -1;
+    // -----------------------------------------
+        
+    c[0] = 1;
+    c[Nx - 1] = 0;
+    //------------------------------------------
+
+    Tj = f[1];
+    if (Tj > 3000) {
+
+        Tj = 3000;
+    }
+
+    k = 100 / (0.68 + 9.82e-4 * Tj); 
+    Tw = f[1]; // current wall temperature
+    qdot_rad = Epsilon * sigma * (pow(Tw,4) - pow(T_inf,4));
+    qdot_in = -(qdot0 - rho * Qstar * sdot0 - qdot_rad) * (x[2] - x[0]) / (2 * k);   
+
+    d[0] = qdot_in;    
     d[Nx - 1] = 0;
     //--------------------------------------
 
@@ -372,7 +368,6 @@ double solidCond_Ray::GetMeltedLength(vector<double>& f) {
     return dx_melt;
 }
 
-
 double solidCond_Ray::GetRecessionRate(vector<double>& f, double dt) {
 
     double sdot;
@@ -386,7 +381,6 @@ double solidCond_Ray::GetRecessionRate(vector<double>& f, double dt) {
 
     return sdot;
 }
-
 
 void solidCond_Ray::EvaluateTemp( vector<double>& f, double qdot0, double sdot0, double dt, const int Nx) {
 
@@ -422,12 +416,10 @@ bool solidCond_Ray::CheckMelting(vector<double>& f) {
 
 }
 
-
 void solidCond_Ray::init(double T0, int numPts) {
 
     GenerateGeomGrid(numPts + 3); // Generate initial grid with geometric spacing
-    //GenerateUniformGrid(numPts + 3);
-    mdot_sp.resize(6);
+    //GenerateUniformGrid(numPts + 3);    
 
     for (int ni = 0; ni < numPts+2; ++ni) {        
 

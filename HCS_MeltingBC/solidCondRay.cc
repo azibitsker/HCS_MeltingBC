@@ -11,6 +11,8 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt) {
     double mdot_c; // carbon flux from the surface
     double Tw; // wall temperature
 
+    double C_O0 = 5.771e-4; //[mol/m^3] concentration of oxygen atoms at the wall
+
     vector<double> f(Nx + 2); // current temperature state vector
     for (int j = 0; j < Nx + 2; j++) { 
         f[j] = f0[j];
@@ -53,7 +55,7 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt) {
             // Evaluate temperature at the next time step, vector f is updated
             EvaluateTemp(f, qdot_in, sdot0, dt, Nx);
             Tw = f[1]; //wall temperature
-            SR.getOxidRates(Tw); // update vector mdot_k
+            SR.getOxidRates(Tw,C_O0); // update vector mdot_k
             SR.getSublimRates(Tw, ps_c); // update values in vector mdot_k
 
             // Compute the actuall carbon loss flux from graphite surface

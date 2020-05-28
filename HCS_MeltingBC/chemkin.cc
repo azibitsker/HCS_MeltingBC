@@ -28,13 +28,12 @@ void chemkin::init_chemParam(){
 
 
 
-void chemkin::getOxidRates(double Tw) {
+void chemkin::getOxidRates(double Tw, double C_O0) {
 	
 	double dodt, dcodt, dco2dt;	
-	//double Fox = 1e23 / NA;
 	
 
-	C_O0 = Fox * 4 / sqrt(8 * kb * 1000 / pi / mo);
+	//C_O0 = Fox * 4 / sqrt(8 * kb * 1000 / pi / mo);
 
 	//rate constants
 	double k1 = (1. / (4. * B)) * sqrt((8. * kb * Tw) / (pi * mo));
@@ -46,7 +45,7 @@ void chemkin::getOxidRates(double Tw) {
 	S_ss = (k2 + k4 * C_O0) / (k1 * C_O0 + k2 + k4 * C_O0) * B; // sites [mol/m^2] steady state number of available sites	
 
 	//production rates [mol]/m^2/s
-	dodt = k2 * (B - S_ss) + Fox - k1 * C_O0 * S_ss - ((k3 + k4) * C_O0 * (B - S_ss)) - (k5 * C_O0 * S_ss);
+	dodt = k2 * (B - S_ss);// +Fox - k1 * C_O0 * S_ss - ((k3 + k4) * C_O0 * (B - S_ss)) - (k5 * C_O0 * S_ss);
 	dcodt = (k3 * C_O0 * (B - S_ss)) + (k5 * C_O0 * S_ss);
 	dco2dt = (k4 * C_O0 * (B - S_ss));
 

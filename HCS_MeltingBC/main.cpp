@@ -39,11 +39,11 @@ int main(){
      // Write results into data file       
     int w = 20; 
     
-    ofstream mFractionsFile("mFrac21.dat");
+    ofstream mFractionsFile("mFrac23.dat");
     mFractionsFile << left << setw(w) << "t [s]" << setw(w) << "T [K]"  << setw(w) << "y_o" << setw(w) << "y_co" << setw(w) << "y_co2" << setw(w) << "y_c" << setw(w) << "y_c2" << setw(w) << "y_c3" << setw(w) << "y_o2" << setw(w) << "y_n2" << setw(w) << "y_n" << setw(w) << "y_no" << endl;
     mFractionsFile << left << setw(w) << ti << setw(w) << T0_mr << setw(w) << 4.34e-2/2 << setw(w) << 0 << setw(w) << 0 << setw(w) << 0 << setw(w) <<0 << setw(w) << 0 << setw(w) << 1.6e-1/2 << setw(w) << 7.5e-1/2 << setw(w) << 2.6e-3/2 << setw(w) << 4.4e-2/2 << endl;
 
-    ofstream RatesFile("Rates21.dat");
+    ofstream RatesFile("Rates23.dat");
     RatesFile << left << setw(w) <<"t [s]" << setw(w) << "T [K]" << setw(w) << "Xfront [mm]" << setw(w) << "sdot [mm/s]" << setw(w) << "dodt [kg/m^2s]" << setw(w) << "dcodt [kg/m^2s]" << setw(w) << "dco2dt [kg/m^2s]" << setw(w) <<"dcdt [kg/m^2s]"<< setw(w) <<"dc2dt [kg/m^2s]"<< setw(w) <<"dc3dt [kg/m^2s]"<< endl;
     RatesFile << left << setw(w) << ti << setw(w) << T0_mr << setw(w) << mr.rays[0].x0[1] * 1e3 << setw(w) << 0 << setw(w) << 0 << setw(w) << 0 << setw(w) << 0 << setw(w) << 0 << setw(w) << 0 << setw(w) << 0 << endl;
     // -----------------------------------------------------------------------------       

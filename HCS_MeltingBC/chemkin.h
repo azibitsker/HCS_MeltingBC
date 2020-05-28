@@ -43,7 +43,7 @@ public:
 	double S0 = 0.5e-5; // initial concentration of available sites [mol/m^2]
 	double S_ss; // steady state surface concentration of availables sites	 
 	double C_O0; // [mol/m^2] constant oxygen concentration as the surface
-	double Fox = 1e21/NA;
+	double Fox = 1e23/NA;
 
 	//---------- Sublimation parameters---------------------
 	int N_sub = 3;
@@ -53,7 +53,7 @@ public:
 public:
 
 	void init_chemParam();
-    void getOxidRates(double Tw);
+    void getOxidRates(double Tw, double C_O0);
 	void getSublimRates(double Tw, vector<double>& ps_c);
 	void getSpeciesFlux();
 

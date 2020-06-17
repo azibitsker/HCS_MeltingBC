@@ -25,14 +25,17 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt,ofstream & 
         T0 = f[1];
         sdot = GetRecessionRate(f, dt);
 
-        ////////////////// Perform a check if sdot0 and sdot are from two sides of the true sdot solution//////////////////////
-        // If not, halve sdot until the requirement of interval halving method is fulfilled
+        // ----------------------------------------------
+        //-----------------------------------------------
+        // Iterative search for the true recession that assures Twall=Tmelt             
         
         ContractGridBoundaries(sdot, dt, Nx + 3); // array x is updated
         EvaluateTemp(f, qdot_in, sdot, dt, Nx); // reevaluate temperature with the updated sdot0 and x; vector f is updated
         T = f[1];
         TT0 = (T0 - Tm) * (T - Tm);
 
+        // Perform a check if sdot0 and sdot are from two sides of the true sdot solution//
+        // If not, halve sdot until the requirement of interval halving method is fulfilled 
         if (TT0 > 0) {
 
             while (TT0 > 0) {
@@ -43,8 +46,7 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt,ofstream & 
                 TT0 = (T0 - Tm) * (T - Tm);
             }
                      
-        }   
-        ////////////////////////////////////////////////////////////////////
+        }          
 
             sdot_g = (sdot0 + sdot) / 2; // initial guess, sdot_true is between sdot0 and sdot
             ContractGridBoundaries(sdot_g, dt, Nx + 3); // array x is updated
@@ -397,8 +399,8 @@ bool solidCond_Ray::CheckMelting(vector<double>& f) {
 
 void solidCond_Ray::init(double T0, int numPts) {
 
-    //GenerateGeomGrid(numPts + 3); // Generate initial grid with uniform spacing
-    GenerateUniformGrid(numPts + 3);
+    GenerateGeomGrid(numPts + 3); // Generate initial grid with uniform spacing
+    //GenerateUniformGrid(numPts + 3);
 
     for (int ni = 0; ni < numPts+2; ++ni) {
 

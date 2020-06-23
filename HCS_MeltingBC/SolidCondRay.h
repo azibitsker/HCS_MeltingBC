@@ -13,7 +13,7 @@ class solidCond_Ray {
 public:
 
     double L0 = 0.03; // initial material length
-    double F = 1.4; // cell size increase ratio
+    double F = 1.3; // cell size increase ratio
     double k = 0.4, rho = 1500, Cp = 1500; // material properties
     double Tm = 1100; // [K] material melting temperature
     double Qstar = 1e6; // [J/kgK] heat of ablation

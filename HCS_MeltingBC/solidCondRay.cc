@@ -172,7 +172,8 @@ void solidCond_Ray::GenerateUniformGrid(int Nx) {
 }
 
 // Update grid boundaries based on the computed recession rate sdot0
-void solidCond_Ray::ContractGridBoundaries(double sdot0, double dt, const int Nx) {
+void solidCond_Ray::ContractGridBoundaries(double sdot0, double dt, const int Nx)
+{
 
     double dx_melt = sdot0 * dt; // total length of the melted cells
     double L;
@@ -209,6 +210,7 @@ void solidCond_Ray::Get_abcd_coeff(double qdot0, double sdot0, double dt, vector
     double aW, aP, aE, aP0;
     double dxW, dxP, dxP0, dxE;
     double Uw, Ue;
+    double fw, fe;
 
     // Compute "a" coefficient
     // --------------------------------------
@@ -218,8 +220,8 @@ void solidCond_Ray::Get_abcd_coeff(double qdot0, double sdot0, double dt, vector
         dxW = x[j] - x[j - 1]; // west cell length
         dxP = x[j + 1] - x[j]; // central cell length
         Uw = (x[j] - x0[j]) / dt; // velocity of the west boundary of the P cell
-
-        aW = Uw / (2 * alpha) - 2 / (dxW + dxP);
+        fw = 1 / (1 + dxW / dxP);
+        aW = Uw*fw - 2*alpha / (dxW + dxP);
 
         a[j] = aW;
 
@@ -229,7 +231,9 @@ void solidCond_Ray::Get_abcd_coeff(double qdot0, double sdot0, double dt, vector
 
     // Compute "b" coefficient
     // ------------------------------------
-    b[0] = -1;
+    double dx0 = x[1] - x[0]; // left ghost cell length
+    double dx1 = x[2] - x[1]; // adjacent material cell length
+    b[0] = 2*k/(dx0+dx1);
 
     for (int j = 1; j < Nx - 1; j++) {
 
@@ -238,8 +242,10 @@ void solidCond_Ray::Get_abcd_coeff(double qdot0, double sdot0, double dt, vector
         dxE = x[j + 2] - x[j + 1]; // east cell length
         Uw = (x[j] - x0[j]) / dt; // velocity of the west boundary of the P cell
         Ue = (x[j + 1] - x0[j + 1]) / dt; // velocity of the east boundary of the P cell
+        fe = 1 / (1 + dxP / dxE);
+        fw = 1 / (1 + dxW / dxP);
 
-        aP = 2 / (dxE + dxP) + 2 / (dxW + dxP) - Ue / (2 * alpha) + Uw / (2 * alpha) + dxP / (dt * alpha);
+        aP = 2*alpha / (dxE + dxP) + 2*alpha / (dxW + dxP) - (Ue*fe-(1-fw)*Uw) + dxP / dt;
 
         b[j] = aP;
 
@@ -249,15 +255,17 @@ void solidCond_Ray::Get_abcd_coeff(double qdot0, double sdot0, double dt, vector
 
     // Compute "c" coefficient
     // ---------------------------------
-    c[0] = 1;
+    c[0] = -2 * k / (dx0 + dx1);
 
-    for (int j = 1; j < Nx - 1; j++) {
+    for (int j = 1; j < Nx - 1; j++) 
+    {
 
         dxE = x[j + 2] - x[j + 1]; //  east cell length
         dxP = x[j + 1] - x[j]; // central cell length
         Ue = (x[j + 1] - x0[j + 1]) / dt; // velocity of the east boundary of the cell
+        fe = 1 / (1 + dxP / dxE);
 
-        aE = -2 / (dxE + dxP) - Ue / (2 * alpha);
+        aE = -2*alpha / (dxE + dxP) - (1-fe)*Ue;
 
         c[j] = aE;
 
@@ -268,7 +276,7 @@ void solidCond_Ray::Get_abcd_coeff(double qdot0, double sdot0, double dt, vector
     // --------------------------------------
     double qdot_in;
 
-    qdot_in = -(qdot0 - rho * Qstar * sdot0) * (x[2] - x[0]) / (2 * k);
+    qdot_in = qdot0 - rho * Qstar * sdot0;
     //if (qdot_in > 0) {
        // cout << "int_t = " << ind_t << ": " "qdot0 < rho*Qstar*sdot0" << endl;
         //return;
@@ -279,7 +287,7 @@ void solidCond_Ray::Get_abcd_coeff(double qdot0, double sdot0, double dt, vector
 
         dxP0 = x0[j + 1] - x0[j]; // central cell length at previous time
 
-        aP0 = dxP0 / (dt * alpha);
+        aP0 = dxP0 / (dt);
 
         d[j] = aP0 * f0[j];
 
@@ -399,8 +407,8 @@ bool solidCond_Ray::CheckMelting(vector<double>& f) {
 
 void solidCond_Ray::init(double T0, int numPts) {
 
-    GenerateGeomGrid(numPts + 3); // Generate initial grid with uniform spacing
-    //GenerateUniformGrid(numPts + 3);
+    //GenerateGeomGrid(numPts + 3); // Generate initial grid with uniform spacing
+    GenerateUniformGrid(numPts + 3);
 
     for (int ni = 0; ni < numPts+2; ++ni) {
 

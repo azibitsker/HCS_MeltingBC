@@ -7,6 +7,8 @@
 #include <vector>
 #include <iomanip>
 
+//#define pi 3.14159265359
+
 
 // This code solves transient heat conduction equation using implicit scheme ( dT/dt=alpha(d^2T/dx^2).
 //The main function is HeatCondSolver with inputs: dt - time step, qdot- heat flux, f0 - temperature state at current time step. Output: Tn - Temperature at the next time step.
@@ -14,7 +16,7 @@
 int main(){   
 
     // ---------To be replaced by CFD simulation---------------------
-    double t = 40;// simulation time [sec]
+    double t = 30;// simulation time [sec]
     double dt =0.001; // t / Nt; // s
     double qdot_i=1.65e6;
     double ti = 0;

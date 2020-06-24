@@ -1,6 +1,7 @@
 #include "solidCondRay.h"
 #include "materialResponse.h"
 
+
 void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt,ofstream & IterationsFile) {
 
     
@@ -172,7 +173,8 @@ void solidCond_Ray::GenerateUniformGrid(int Nx) {
 }
 
 // Update grid boundaries based on the computed recession rate sdot0
-void solidCond_Ray::ContractGridBoundaries(double sdot0, double dt, const int Nx) {
+void solidCond_Ray::ContractGridBoundaries(double sdot0, double dt, const int Nx)
+{
 
     double dx_melt = sdot0 * dt; // total length of the melted cells
     double L;
@@ -207,8 +209,11 @@ void solidCond_Ray::ContractGridBoundaries(double sdot0, double dt, const int Nx
 void solidCond_Ray::Get_abcd_coeff(double qdot0, double sdot0, double dt, vector<double>& a, vector<double>& b, vector<double>& c, vector<double>& d, const int Nx) {
 
     double aW, aP, aE, aP0;
-    double dxW, dxP, dxP0, dxE;
+    double dxW, dxP, dxE;
     double Uw, Ue;
+    double fw, fe;
+    double Aw, Ae;
+    double Vp, Vp0;
 
     // Compute "a" coefficient
     // --------------------------------------
@@ -218,9 +223,10 @@ void solidCond_Ray::Get_abcd_coeff(double qdot0, double sdot0, double dt, vector
         dxW = x[j] - x[j - 1]; // west cell length
         dxP = x[j + 1] - x[j]; // central cell length
         Uw = (x[j] - x0[j]) / dt; // velocity of the west boundary of the P cell
+        fw = 1 / (1 + dxW / dxP);
+        Aw = pow((2 * (Rout-x[j])), m) * pow(pi, 0.5 * m * (3 - m))/numRays;
 
-        aW = Uw / (2 * alpha) - 2 / (dxW + dxP);
-
+        aW = fw*Uw*Aw - 2*alpha*Aw / (dxW + dxP);
         a[j] = aW;
 
     }
@@ -229,7 +235,9 @@ void solidCond_Ray::Get_abcd_coeff(double qdot0, double sdot0, double dt, vector
 
     // Compute "b" coefficient
     // ------------------------------------
-    b[0] = -1;
+    double dx0 = x[1] - x[0]; // left ghost cell length
+    double dx1 = x[2] - x[1]; // adjacent material cell length
+    b[0] = 2*k/(dx0+dx1);
 
     for (int j = 1; j < Nx - 1; j++) {
 
@@ -238,9 +246,13 @@ void solidCond_Ray::Get_abcd_coeff(double qdot0, double sdot0, double dt, vector
         dxE = x[j + 2] - x[j + 1]; // east cell length
         Uw = (x[j] - x0[j]) / dt; // velocity of the west boundary of the P cell
         Ue = (x[j + 1] - x0[j + 1]) / dt; // velocity of the east boundary of the P cell
+        fe = 1 / (1 + dxP / dxE);
+        fw = 1 / (1 + dxW / dxP);
+        Aw = pow((2 * (Rout - x[j])), m) * pow(pi, 0.5 * m * (3 - m)) / numRays;
+        Ae = pow((2 * (Rout - x[j+1])), m) * pow(pi, 0.5 * m * (3 - m)) / numRays;
+        Vp = pow(2, m) * pow(pi, 0.5 * m * (3 - m)) / (m + 1) * (pow((Rout - x[j]), m + 1) - pow((Rout - x[j + 1]), m + 1))/numRays;
 
-        aP = 2 / (dxE + dxP) + 2 / (dxW + dxP) - Ue / (2 * alpha) + Uw / (2 * alpha) + dxP / (dt * alpha);
-
+        aP = 2*alpha*Ae / (dxE + dxP) + 2*alpha*Aw / (dxW + dxP) - (Ue*fe*Ae-(1-fw)*Uw*Aw) + Vp / dt;
         b[j] = aP;
 
     }
@@ -249,16 +261,18 @@ void solidCond_Ray::Get_abcd_coeff(double qdot0, double sdot0, double dt, vector
 
     // Compute "c" coefficient
     // ---------------------------------
-    c[0] = 1;
+    c[0] = -2 * k / (dx0 + dx1);
 
-    for (int j = 1; j < Nx - 1; j++) {
+    for (int j = 1; j < Nx - 1; j++) 
+    {
 
         dxE = x[j + 2] - x[j + 1]; //  east cell length
         dxP = x[j + 1] - x[j]; // central cell length
         Ue = (x[j + 1] - x0[j + 1]) / dt; // velocity of the east boundary of the cell
+        fe = 1 / (1 + dxP / dxE);
+        Ae = pow((2 * (Rout - x[j + 1])), m) * pow(pi, 0.5 * m * (3 - m)) / numRays;
 
-        aE = -2 / (dxE + dxP) - Ue / (2 * alpha);
-
+        aE = -2*alpha*Ae / (dxE + dxP) - (1-fe)*Ue*Ae;
         c[j] = aE;
 
     }
@@ -268,7 +282,7 @@ void solidCond_Ray::Get_abcd_coeff(double qdot0, double sdot0, double dt, vector
     // --------------------------------------
     double qdot_in;
 
-    qdot_in = -(qdot0 - rho * Qstar * sdot0) * (x[2] - x[0]) / (2 * k);
+    qdot_in = qdot0 - rho * Qstar * sdot0;
     //if (qdot_in > 0) {
        // cout << "int_t = " << ind_t << ": " "qdot0 < rho*Qstar*sdot0" << endl;
         //return;
@@ -276,11 +290,10 @@ void solidCond_Ray::Get_abcd_coeff(double qdot0, double sdot0, double dt, vector
     d[0] = qdot_in;
 
     for (int j = 1; j < Nx - 1; j++) {
+        
+        Vp0 = pow(2, m) * pow(pi, 0.5 * m * (3 - m)) / (m + 1) * (pow((Rout - x0[j]), m + 1) - pow((Rout - x0[j + 1]), m + 1)) / numRays;
 
-        dxP0 = x0[j + 1] - x0[j]; // central cell length at previous time
-
-        aP0 = dxP0 / (dt * alpha);
-
+        aP0 = Vp0 / (dt);
         d[j] = aP0 * f0[j];
 
     }

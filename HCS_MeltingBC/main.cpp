@@ -14,9 +14,9 @@
 int main(){   
 
     // ---------To be replaced by CFD simulation---------------------
-    double t = 3*60;// simulation time [sec]
-    double dt =0.01; // t / Nt; // s
-    double qdot_i=7.5e5;
+    double t = 30;// simulation time [sec]
+    double dt =0.001; // t / Nt; // s
+    double qdot_i=1.65e6;
     double ti = 0;
     
 
@@ -26,7 +26,7 @@ int main(){
     for (int r = 0; r < numRays_mr; r++) { qdot_mr.push_back(qdot_i); }
     //-------------------------------------------------------------------
 
-    int numPtsPerRay_mr = 80;
+    int numPtsPerRay_mr = 30;
     double T0_mr = 300;
     int i = 1;
 
@@ -37,18 +37,15 @@ int main(){
     mr.Init_mr(numRays_mr, numPtsPerRay_mr, T0_mr);
 
      // Write initial temperature vector into .dat file    
-    ofstream NcellsFile("N_cells.dat");
-    NcellsFile << "N_cells";
-    NcellsFile << endl;
     ofstream IterationsFile("N_iter.dat");
-    ofstream BoundaryFile("X_C.dat");
+    ofstream BoundaryFile("x.dat");
     for (int j = 1; j < numPtsPerRay_mr+2; j++) { BoundaryFile << mr.rays[0].x0[j]* 1e3<<endl; }
     //BoundaryFile << endl;
-    ofstream RecessionRateFile("Sdot.dat");
+    ofstream RecessionRateFile("sdot.dat");
     RecessionRateFile << 0 << endl;
-    ofstream TimeFile("Time_C.dat");
+    ofstream TimeFile("time.dat");
     TimeFile << ti << endl;
-    ofstream TempFile("Temp_C.dat");
+    ofstream TempFile("temp.dat");
     for (int j = 1; j < numPtsPerRay_mr+1; j++) { TempFile << T0_mr<<" "; }
     TempFile << endl;
     
@@ -91,7 +88,7 @@ int main(){
     RecessionRateFile.close();
     TimeFile.close();
     IterationsFile.close();
-    NcellsFile.close();
+   
 
 
     cout << "Hello World!" << endl;

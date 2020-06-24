@@ -12,20 +12,18 @@ class solidCond_Ray {
 
 public:
 
-    double L0 = 0.01; // initial material length
-    double F = 1.1; // cell size increase ratio
-    double k = 10, rho = 8000, Cp = 500; // material properties
-    double Tm = 5000; // [K] material melting temperature
-    double Qstar = 2e6; // [J/kgK] heat of ablation
+    double L0 = 0.03; // initial material length
+    double F = 1.3; // cell size increase ratio
+    double k = 0.4, rho = 1500, Cp = 1500; // material properties
+    double Tm = 1100; // [K] material melting temperature
+    double Qstar = 1e6; // [J/kgK] heat of ablation
     double Eps_T = 1e-3;
     double alpha = k / (rho * Cp); // thermal diffusivity
     vector<double> f0, x0,x;
-    double sdot_out;   
-    double eta = 0.5;
-    double Eps = 0;// 0.7;
+    double sdot_out;     
+    double Eps = 0.7;
     double sigma = 5.67e-8;
     double T_inf = 300;
-
   
 
 public:

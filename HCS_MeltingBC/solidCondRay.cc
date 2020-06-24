@@ -1,98 +1,20 @@
 #include "solidCondRay.h"
 #include "materialResponse.h"
 
-void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt,ofstream & IterationsFile) {
+void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt) {
 
+    double sdot0 = 0;   
     
-    
-    double sdot=0; // computed recession rate  
-    double sdot0 = 0;
-    double sdot_g = 0;
-    double T0 = 0;
-    double T = 0;
-    double TT0 = 0;
-    vector<double> f(Nx + 2);
 
     // Evaluate temperature at the next time step, vector f is updated
-    EvaluateTemp(f, qdot_in, sdot0, dt, Nx);
-
-    // Check if at least one of the material cells has reached melting temperature
-    if (CheckMelting(f)) {
-
-        int N_iter = 0;
-        // Interval Halving method to find sdot such that Tw==Tm
-        
-        T0 = f[1];
-        sdot = GetRecessionRate(f, dt);
-
-        // ----------------------------------------------
-        //-----------------------------------------------
-        // Iterative search for the true recession that assures Twall=Tmelt             
-        
-        ContractGridBoundaries(sdot, dt, Nx + 3); // array x is updated
-        EvaluateTemp(f, qdot_in, sdot, dt, Nx); // reevaluate temperature with the updated sdot0 and x; vector f is updated
-        T = f[1];
-        TT0 = (T0 - Tm) * (T - Tm);
-
-        // Perform a check if sdot0 and sdot are from two sides of the true sdot solution//
-        // If not, halve sdot until the requirement of interval halving method is fulfilled 
-        if (TT0 > 0) {
-
-            while (TT0 > 0) {
-                sdot = sdot / 2; // halve sdot until requirement of the method is fulfilled
-                ContractGridBoundaries(sdot, dt, Nx + 3); // array x is updated
-                EvaluateTemp(f, qdot_in, sdot, dt, Nx); // reevaluate temperature with the updated sdot0 and x; vector f is updated
-                T = f[1];
-                TT0 = (T0 - Tm) * (T - Tm);
-            }
-                     
-        }          
-
-            sdot_g = (sdot0 + sdot) / 2; // initial guess, sdot_true is between sdot0 and sdot
-            ContractGridBoundaries(sdot_g, dt, Nx + 3); // array x is updated
-            EvaluateTemp(f, qdot_in, sdot_g, dt, Nx); // reevaluate temperature with the updated sdot0 and x; vector f is updated
-            T = f[1];
-
-            // Loop until the guess of sdot0 unsures enough recession to happen to reduce the q_in and cause Twall=Tmelting
-            while (f[1] < Tm - Eps_T || f[1]>Tm) {
-
-                N_iter++;
-
-                TT0 = (T0 - Tm) * (T - Tm);
-
-                if (TT0 < 0) {
-                    sdot = sdot_g;
-                }
-                else {
-                    sdot0 = sdot_g;
-                    T0 = f[1];
-                }
-
-                sdot_g = (sdot0 + sdot) / 2; // guess sdot0 for the next evaluation of temperature profile
-                ContractGridBoundaries(sdot_g, dt, Nx + 3); // array x is updated
-                EvaluateTemp(f, qdot_in, sdot_g, dt, Nx); // reevaluate temperature with the updated sdot0 and x; vector f is updated
-                T = f[1];
-            }
-
-        IterationsFile <<N_iter;
-        IterationsFile << endl;
-
-        // count how many cells are melted at each time step
-        //double N_ratio;
-        //double dx_melt = sdot0 * dt;
-
-        //N_ratio = dx_melt / (x0[2] - x0[1]);
-        //NcellsFile << N_ratio;
-        //NcellsFile << endl;
-
-        // Update  x0
-            for (int j = 0; j < Nx + 3; j++) { x0[j] = x[j]; }               
-
-    }
-
+    EvaluateTemp(qdot_in, sdot0, dt, Nx);   
+    
+    // Update  x0
+    //for (int j = 0; j < Nx + 3; j++) { x0[j] = x[j]; }    
+   
     // Update  f0
-    for (int j = 0; j < Nx + 2; j++) { f0[j] = f[j]; }
-    sdot_out = sdot_g;
+    //for (int j = 0; j < Nx + 2; j++) { f0[j] = f[j]; }
+    
         
 }
 
@@ -204,6 +126,31 @@ void solidCond_Ray::ContractGridBoundaries(double sdot0, double dt, const int Nx
 
 }
 
+void solidCond_Ray::moveInternalMesh(int N_iter)
+{
+
+    int Nx = x.size();
+    double dx_f;
+
+    /* initialize random seed: */
+    srand(time(NULL));    
+
+//------- Move randomly internal face of the mesh------------------    
+
+    for (int i = 0; i < N_iter; ++i)
+    {
+        for (int j = 2; j < Nx - 2; j++)
+        {
+            dx_f = (((double)rand() / (RAND_MAX)) * 2 - 1) / 2e4;
+            x[j] = x[j] + dx_f;
+        }
+    }
+
+
+    
+
+}
+
 // Get a,b,c coefficients for Thomas algorithm
 void solidCond_Ray::Get_abcd_coeff(double qdot0, double sdot0, double dt, vector<double>& a, vector<double>& b, vector<double>& c, vector<double>& d, const int Nx) {
 
@@ -233,7 +180,7 @@ void solidCond_Ray::Get_abcd_coeff(double qdot0, double sdot0, double dt, vector
     // ------------------------------------
     double dx0 = x[1] - x[0]; // left ghost cell length
     double dx1 = x[2] - x[1]; // adjacent material cell length
-    b[0] = 2*k/(dx0+dx1);
+    b[0] = 1;
 
     for (int j = 1; j < Nx - 1; j++) {
 
@@ -255,7 +202,7 @@ void solidCond_Ray::Get_abcd_coeff(double qdot0, double sdot0, double dt, vector
 
     // Compute "c" coefficient
     // ---------------------------------
-    c[0] = -2 * k / (dx0 + dx1);
+    c[0] = -1;
 
     for (int j = 1; j < Nx - 1; j++) 
     {
@@ -276,11 +223,8 @@ void solidCond_Ray::Get_abcd_coeff(double qdot0, double sdot0, double dt, vector
     // --------------------------------------
     double qdot_in;
 
-    qdot_in = qdot0 - rho * Qstar * sdot0;
-    //if (qdot_in > 0) {
-       // cout << "int_t = " << ind_t << ": " "qdot0 < rho*Qstar*sdot0" << endl;
-        //return;
-    //}
+    qdot_in = 0.;
+    
     d[0] = qdot_in;
 
     for (int j = 1; j < Nx - 1; j++) {
@@ -297,7 +241,7 @@ void solidCond_Ray::Get_abcd_coeff(double qdot0, double sdot0, double dt, vector
 
 }
 // Solver linear system of equations using Thomas algorithm
-void  solidCond_Ray::SolveTDMA(vector<double>& f, vector<double>& a, vector<double>& b, vector<double>& c, vector<double>& d, const int Nx) {
+void  solidCond_Ray::SolveTDMA(vector<double>& a, vector<double>& b, vector<double>& c, vector<double>& d, const int Nx) {
 
     // Solve system of eq. A*T=B*T_t0+C
 
@@ -370,7 +314,7 @@ double solidCond_Ray::GetRecessionRate(vector<double>& f, double dt) {
 }
 
 
-void solidCond_Ray::EvaluateTemp( vector<double>& f, double qdot0, double sdot0, double dt, const int Nx) {
+void solidCond_Ray::EvaluateTemp(double qdot0, double sdot0, double dt, const int Nx) {
 
     vector<double> a(Nx + 2), b(Nx + 2), c(Nx + 2), d(Nx + 2);
 
@@ -379,7 +323,7 @@ void solidCond_Ray::EvaluateTemp( vector<double>& f, double qdot0, double sdot0,
     //--------------------------------------------------
 
     //Solve linear system of equations and update temperature solution f0
-    SolveTDMA(f, a, b, c, d, Nx + 2);
+    SolveTDMA(a, b, c, d, Nx + 2);
     //-----------------------------------------------------------------------
 
 
@@ -410,12 +354,9 @@ void solidCond_Ray::init(double T0, int numPts) {
     //GenerateGeomGrid(numPts + 3); // Generate initial grid with uniform spacing
     GenerateUniformGrid(numPts + 3);
 
-    for (int ni = 0; ni < numPts+2; ++ni) {
+    f.resize(numPts + 2);
 
-        //double T;
-        //double xc;
-        //xc = (x0[ni + 1] + x0[ni]) / 2;
-        //T = T0 + (Tm - T0) * exp(-4e-4 * xc / alpha);
+    for (int ni = 0; ni < numPts+2; ++ni) {     
 
         f0.push_back(T0);
     }

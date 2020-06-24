@@ -12,7 +12,6 @@ class solidCond_Ray {
 
 public:
 
-    double L0 = 0.03; // initial material length
     double F = 1.3; // cell size increase ratio
     double k = 0.4, rho = 1500, Cp = 1500; // material properties
     double Tm = 1100; // [K] material melting temperature
@@ -22,6 +21,12 @@ public:
     vector<double> f0, x0,x;
     double sdot_out;   
     double eta = 0.5;
+    int m = 2; //  0: Cartesian, 1: Cylindrical, 2: Spherical
+    double Rout=0.04; // outer radius of cylinder or sphere
+    double Rin=0.01; // inner radius of ylinder or sphere
+    double L0 = Rout - Rin; // initial material length
+    int numRays = 1;
+    double pi = 3.14159265359;
   
 
 public:

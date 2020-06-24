@@ -17,13 +17,13 @@ void materialResponse::SolveCondRays(vector<double> qdot_in, int numPtsPerRay_in
 {
 
     int Nx = numPtsPerRay_in;
-    size_t numRays = qdot_in.size();
+    size_t nRays = qdot_in.size();
     double timeInc = dt_in;
 
     // ofstream RecessionRateFile("Sdot.dat");
      //RecessionRateFile << 0 << endl;
 
-    for (int r = 0; r < numRays; ++r)
+    for (int r = 0; r < nRays; ++r)
     {
         rays[r].HeatCondSolver(qdot_in[r], Nx, timeInc, IterationsFile);
 

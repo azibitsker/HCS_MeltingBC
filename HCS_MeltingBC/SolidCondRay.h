@@ -13,8 +13,8 @@ class solidCond_Ray {
 public:
 
     int m = 0; //  0: Cartesian, 1: Cylindrical, 2: Spherical
-    bool IterSdot = false;
-    bool SteadyStateSdot = true;
+    bool IterSdot = true;
+    bool SteadyStateSdot = false;
     bool PureCond = false; 
     bool GeomGrid = true;
     double knownRecessionRate = 4e-4;

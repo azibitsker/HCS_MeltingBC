@@ -14,9 +14,9 @@
 int main(){   
 
     // ---------To be replaced by CFD simulation---------------------
-    double t = 70;// simulation time [sec]
-    double dt =0.005; // t / Nt; // s
-    double qdot_i=6e6;
+    double t = 5;// simulation time [sec]
+    double dt =1e-3; // t / Nt; // s
+    double qdot_i=1e3;
     double ti = 0;
     
 
@@ -27,7 +27,7 @@ int main(){
     //-------------------------------------------------------------------
 
     int numPtsPerRay_mr = 20;
-    double T0_mr = 800;
+    double T0_mr = 298.15;
     int i = 1;
 
     //---------------------Solid conduction----------------------------------------
@@ -39,13 +39,13 @@ int main(){
      // Write results into data file       
     int w = 20; 
     
-    ofstream mFractionsFile("mFrac23.dat");
-    mFractionsFile << left << setw(w) << "t [s]" << setw(w) << "T [K]"  << setw(w) << "y_o" << setw(w) << "y_co" << setw(w) << "y_co2" << setw(w) << "y_c" << setw(w) << "y_c2" << setw(w) << "y_c3" << setw(w) << "y_o2" << setw(w) << "y_n2" << setw(w) << "y_n" << setw(w) << "y_no" << endl;
-    mFractionsFile << left << setw(w) << ti << setw(w) << T0_mr << setw(w) << 4.34e-2/2 << setw(w) << 0 << setw(w) << 0 << setw(w) << 0 << setw(w) <<0 << setw(w) << 0 << setw(w) << 1.6e-1/2 << setw(w) << 7.5e-1/2 << setw(w) << 2.6e-3/2 << setw(w) << 4.4e-2/2 << endl;
+    ofstream mFractionsFile("mFrac.dat");
+    mFractionsFile << left << setw(w) << "t [s]" << setw(w) << "T [K]"  << setw(w) << "y_c10h160" << setw(w) <<  "y_n2"  << setw(w) << "y_o2" << setw(w) << "y_ar" <<endl;
+    mFractionsFile << left << setw(w) << ti << setw(w) << T0_mr << setw(w) << 0 << setw(w) << 78/100 << setw(w) << 21/100 << setw(w) << 1/100 << endl;
 
-    ofstream RatesFile("Rates23.dat");
-    RatesFile << left << setw(w) <<"t [s]" << setw(w) << "T [K]" << setw(w) << "Xfront [mm]" << setw(w) << "sdot [mm/s]" << setw(w) << "dodt [kg/m^2s]" << setw(w) << "dcodt [kg/m^2s]" << setw(w) << "dco2dt [kg/m^2s]" << setw(w) <<"dcdt [kg/m^2s]"<< setw(w) <<"dc2dt [kg/m^2s]"<< setw(w) <<"dc3dt [kg/m^2s]"<< endl;
-    RatesFile << left << setw(w) << ti << setw(w) << T0_mr << setw(w) << mr.rays[0].x0[1] * 1e3 << setw(w) << 0 << setw(w) << 0 << setw(w) << 0 << setw(w) << 0 << setw(w) << 0 << setw(w) << 0 << setw(w) << 0 << endl;
+    ofstream RatesFile("Rates.dat");
+    RatesFile << left << setw(w) <<"t [s]" << setw(w) << "T [K]" << setw(w) << "Xfront [mm]" << setw(w) << "sdot [mm/s]" << setw(w) << "omega_dot [kg/m^2s]" << setw(w) << "mdot_w [kg/m^2s]" << endl;
+    RatesFile << left << setw(w) << ti << setw(w) << T0_mr << setw(w) << mr.rays[0].x0[1] << setw(w) << 0 << setw(w) << 0 << setw(w) << 0 << endl;
     // -----------------------------------------------------------------------------       
 
 
@@ -60,9 +60,9 @@ int main(){
         mr.SolveCondRays(qdot_mr, numPtsPerRay_mr, dt);
         ///////////////////////////////////////////////////////////////             
 
-        // Write temperature data into file        
-        RatesFile << left << setw(w) << ti << setw(w) << mr.rays[0].f0[1] << setw(w) << mr.rays[0].x0[1] * 1e3 << setw(w) << mr.rays[0].sdot_out * 1e3 << setw(w) << mr.rays[0].mdot_k_out[0] << setw(w) << mr.rays[0].mdot_k_out[1] << setw(w) << mr.rays[0].mdot_k_out[2] << setw(w) << mr.rays[0].mdot_k_out[3] << setw(w) << mr.rays[0].mdot_k_out[4] << setw(w) << mr.rays[0].mdot_k_out[5] << endl;
-        mFractionsFile << left << setw(w) << ti << setw(w) << mr.rays[0].f0[1] << setw(w) << mr.rays[0].yk_w_out[0] << setw(w) << mr.rays[0].yk_w_out[1] << setw(w) << mr.rays[0].yk_w_out[2] << setw(w) << mr.rays[0].yk_w_out[3] << setw(w) << mr.rays[0].yk_w_out[4] << setw(w) << mr.rays[0].yk_w_out[5] << setw(w) << mr.rays[0].yk_w_out[6] << setw(w) << mr.rays[0].yk_w_out[7] << setw(w) << mr.rays[0].yk_w_out[8] << setw(w) << mr.rays[0].yk_w_out[9] << endl;
+        // Write temperature data into file     
+        mFractionsFile << left << setw(w) << ti << setw(w) << mr.rays[0].f0[1] << setw(w) << mr.rays[0].yk_w_out[0] << setw(w) << mr.rays[0].yk_w_out[1] << setw(w) << mr.rays[0].yk_w_out[2] << setw(w) << mr.rays[0].yk_w_out[3] << endl;
+        RatesFile << left << setw(w) << ti << setw(w) << mr.rays[0].f0[1] << setw(w) << mr.rays[0].x0[1] << setw(w) << mr.rays[0].sdot_out << setw(w) << mr.rays[0].mdot_k_out[0]  << setw(w) << mr.rays[0].mdot_w_out << endl;
 
         i += 1;
 

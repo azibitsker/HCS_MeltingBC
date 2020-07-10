@@ -10,9 +10,9 @@ void momentumBalance::solveMomentumBalance(chemkin SR, massBalance MasB, double 
 	double Mw_ps; // average molar mass of produced species
 	Mw_ps = 0; // average species molar weight
 	
-	for (int i = 0; i < SR.Ns-4; i++) {
+	for (int i = 0; i < SR.Mw_s.size(); i++) {
 
-		Mw_ps += MasB.yk_w[i] * SR.Mw_s[i]; // compute overall molar weight of produced species at the wall
+		Mw_ps += MasB.yk_w[i] * SR.Mw_s[i]; // compute overall molar weight of blowing species at the wall
 
 	}
 

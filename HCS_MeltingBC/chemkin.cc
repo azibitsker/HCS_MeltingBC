@@ -37,7 +37,7 @@ void chemkin::getSublimRates(double Tw, double ps_c)
 
 	//production rates camphor gas [kg/m^2/s]
 
-	mdot_k[1] = alpha_sub * sqrt(Mw_s[1] / (2 * pi * R0 * Tw))* (pvs_c - ps_c);
+	mdot_k[0] = alpha_sub * sqrt(Mw_s[0] / (2 * pi * R0 * Tw))* (pvs_c - ps_c);
 	
 
 }

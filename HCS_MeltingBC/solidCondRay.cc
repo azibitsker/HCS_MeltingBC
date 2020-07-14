@@ -44,11 +44,11 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt) {
     MasB.init_MassBal(SR, yk0_w); // initialize initial species concentrations at the wall with a guess
     mdot_w_out = 0;
 
-    while (conv_yk_w > 1e-5) {
+    while (conv_yk_w > 1e-7) {
         conv_sdot = 1;
         norm_yk = 0;
         // convergence on sdot for the computed surface oxidation and sublimation
-        while (conv_sdot > 1e-5) {
+        while (conv_sdot > 1e-7) {
 
             // Evaluate temperature at the next time step, vector f is updated
             EvaluateTemp(f, qdot_in, sdot0, dt, Nx);
@@ -58,7 +58,7 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt) {
             mdot_w_out = SR.mdot_w;
 
             // Compute Camphor mass flux from the surface
-            mdot_c = SR.mdot_k[1]; //[kg/m^2sec] 
+            mdot_c = SR.mdot_k[0]; //[kg/m^2sec] 
             sdot = mdot_c / rho_s;
 
             ContractGridBoundaries(sdot, dt, Nx + 3); // array x is updated
@@ -79,7 +79,7 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt) {
 
         // update partial pressures of camphor      
 
-            ps_c = MasB.yk_w[1] * MomB.rho_w* SR.R0 / SR.Mw_s[1] * Tw;
+            ps_c = MasB.yk_w[0] * MomB.rho_w* SR.R0 / SR.Mw_s[0] * Tw;
         
 
         // compute norm of yk_w to check the convergence

@@ -13,7 +13,7 @@ class chemkin
 public:
 
 	// General parameters	
-	int const Ns = 5; // number of species	
+	int const Ns = 4; // number of species	
 	double Sc = 0.5; //Schmidt number
 	double Ds; //species diffusion coefficient
 	double mu_air = 47.88e-6; //[Pa*s] air dynamic viscosity at 1000 C	
@@ -22,7 +22,7 @@ public:
 	double mdot_w; // // overall flux of species out of the control volume
 	vector<double> mdot_k; // vector of individual species mass flux
 	vector<double> Mw_s; //molar weight of each species
-	vector<double> yk_f = {0., 78.0 / 100, 21. / 100, 1 / 100 };  // mass fraction of species in the fluid cell {C10H12O N2 O2 Ar}
+	vector<double> yk_f = {0., 78.0 / 100, 21. / 100, 1./100 };  // mass fraction of species in the fluid cell {C10H12O N2 O2 Ar}
 	
 	// Molar masses of species [kg/mol]	
 	double M_c10h16o = 152.2334e-3, M_n2 = 28.e-3, M_o2 = 32.e-3,  M_ar = 39.948e-3;

@@ -16,7 +16,7 @@
 int main(){   
 
     // ---------To be replaced by CFD simulation---------------------
-    double t = 0.077;// simulation time [sec]
+    double t = 5;// simulation time [sec]
     double dt =1e-4; // t / Nt; // s
     double qdot_i=2e6;
     double ti = 0;

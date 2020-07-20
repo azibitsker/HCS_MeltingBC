@@ -334,6 +334,9 @@ void solidCond_Ray::Get_abcd_coeff(vector<double>& grid, double qdot0, double sd
     d[Nx - 1] = 0;
     //--------------------------------------
 
+    
+
+
 }
 // Solver linear system of equations using Thomas algorithm
 void  solidCond_Ray::SolveTDMA(vector<double>& f, vector<double>& a, vector<double>& b, vector<double>& c, vector<double>& d, const int Nx) {

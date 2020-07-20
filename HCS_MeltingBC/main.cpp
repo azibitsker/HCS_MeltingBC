@@ -16,8 +16,8 @@
 int main(){   
 
     // ---------To be replaced by CFD simulation---------------------
-    double t = 5;// simulation time [sec]
-    double dt =1e-4; // t / Nt; // s
+    double t = 2;// simulation time [sec]
+    double dt =1e-3; // t / Nt; // s
     double qdot_i=2e6;
     double ti = 0;
     int ntSkip = 1;
@@ -29,7 +29,7 @@ int main(){
     for (int r = 0; r < numRays_mr; r++) { qdot_mr.push_back(qdot_i); }
     //-------------------------------------------------------------------
 
-    int numPtsPerRay_mr = 100;
+    int numPtsPerRay_mr = 60;
     double T0_mr = 300;
     int i = 1;
     int p = 6;

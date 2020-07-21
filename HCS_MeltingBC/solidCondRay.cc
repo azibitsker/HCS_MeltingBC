@@ -52,7 +52,7 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt) {
 
             // Evaluate temperature at the next time step, vector f is updated
             EvaluateTemp(f, qdot_in, sdot0, dt, Nx);
-            Tw = f[1]; //wall temperature            
+            Tw = (f[0]+f[1])/2; //wall temperature            
             SR.getSublimRates(Tw, ps_c); // update values in vector mdot_k
             SR.getSpeciesFlux(); // evaluates mdot_w    
             mdot_w_out = SR.mdot_w;
@@ -288,7 +288,7 @@ void solidCond_Ray::Get_abcd_coeff( vector<double>& f,double qdot0, double sdot0
     //------------------------------------------
      
     
-    Tw = f[1]; // current wall temperature
+    Tw = (f[0] + f[1]); // current wall temperature
     qdot_rad = Epsilon * sigma * (pow(Tw,4) - pow(T_inf,4));
     double dh_sub = (2.5e-6 * Tw * Tw - 2.2e-3 * Tw + 0.773)*1e6;
     double qdot_sub = mdot_w_out * dh_sub;

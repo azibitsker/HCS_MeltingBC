@@ -14,7 +14,7 @@ class solidCond_Ray {
 public:
 
     double L0 = 0.03; // initial material length
-    double F = 1.1; // cell size increase ratio  
+    double F = 1.3; // cell size increase ratio  
     
     // Camphor properties
     double k_s = 0.2, rho_s = 990, Cp_s = 1.781e3;  
@@ -30,7 +30,7 @@ public:
     // Radiation parameters
     double Epsilon = 0.84;
     double sigma = 5.670374e-8; // [W/m^2K^4]
-    double T_inf = 300; // ambient temperature
+    double T_inf = 297; // ambient temperature
 
     double t_check = 0;
     int i_check = 1; 

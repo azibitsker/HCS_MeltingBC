@@ -14,7 +14,7 @@
 int main(){   
 
     // ---------To be replaced by CFD simulation---------------------
-    double t = 15;// simulation time [sec]
+    double t = 2;// simulation time [sec]
     double dt =1e-3; // t / Nt; // s
     double qdot_i=5e4;
     double ti = 0;
@@ -26,8 +26,8 @@ int main(){
     for (int r = 0; r < numRays_mr; r++) { qdot_mr.push_back(qdot_i); }
     //-------------------------------------------------------------------
 
-    int numPtsPerRay_mr = 20;
-    double T0_mr = 298.15;
+    int numPtsPerRay_mr = 60;
+    double T0_mr =300;
     int i = 1;
 
     //---------------------Solid conduction----------------------------------------
@@ -61,8 +61,8 @@ int main(){
         ///////////////////////////////////////////////////////////////             
 
         // Write temperature data into file     
-        mFractionsFile << left << setw(w) << ti << setw(w) << mr.rays[0].f0[1] << setw(w) << mr.rays[0].yk_w_out[0] << setw(w) << mr.rays[0].yk_w_out[1] << setw(w) << mr.rays[0].yk_w_out[2] << setw(w) << mr.rays[0].yk_w_out[3] << endl;
-        RatesFile << left << setw(w) << ti << setw(w) << mr.rays[0].f0[1] << setw(w) << mr.rays[0].x0[1]*1e3 << setw(w) << mr.rays[0].sdot_out*1e3 << setw(w) << mr.rays[0].mdot_k_out[0]  << setw(w) << mr.rays[0].mdot_w_out << endl;
+        mFractionsFile << left << setw(w) << ti << setw(w) << (mr.rays[0].f0[0]+mr.rays[0].f0[1])/2 << setw(w) << mr.rays[0].yk_w_out[0] << setw(w) << mr.rays[0].yk_w_out[1] << setw(w) << mr.rays[0].yk_w_out[2] << setw(w) << mr.rays[0].yk_w_out[3] << endl;
+        RatesFile << left << setw(w) << ti << setw(w) << (mr.rays[0].f0[0] + mr.rays[0].f0[1]) / 2 << setw(w) << mr.rays[0].x0[1]*1e3 << setw(w) << mr.rays[0].sdot_out*1e3 << setw(w) << mr.rays[0].mdot_k_out[0]  << setw(w) << mr.rays[0].mdot_w_out << endl;
 
         i += 1;
 

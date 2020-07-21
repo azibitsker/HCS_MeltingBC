@@ -15,7 +15,7 @@ public:
 	// General parameters	
 	int const Ns = 4; // number of species	
 	double Sc = 0.5; //Schmidt number
-	double Ds; //species diffusion coefficient
+	double Ds=2.3e-5; //species diffusion coefficient
 	double mu_air = 47.88e-6; //[Pa*s] air dynamic viscosity at 1000 C	
 	double rho_c = 990; //[kg/m^3] camphor density
 

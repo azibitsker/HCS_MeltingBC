@@ -3,7 +3,7 @@
 #include "momentumBalance.h"
 
 
-void massBalance::init_MassBal(chemkin SR,double yk0_w){
+void massBalance::init_MassBal(chemkin SR){
 	
 	yk_w.resize(SR.Ns);
 	yk_gh.resize(SR.Ns);	
@@ -22,7 +22,7 @@ void massBalance::solveMassBal(chemkin SR, double rho_w, vector<double> x)
 	double dx = (x[2] + x[1]) / 2 - (x[0] + x[1]) / 2; // distance between center of ghost cell and center of first material cell
 
 	// compute diffusion coefficient based on rho_w, mu_air@1000C and Sc=0.5 [ref. Keenan 1994]
-	double Ds = 2.3e-5; // SR.mu_air / (SR.Sc * rho_w);
+	double Ds = 2.324e-5; // SR.mu_air / (SR.Sc * rho_w);
 	double y_sum = 0;
 
 	for (int i = 0; i < SR.Ns; i++) {

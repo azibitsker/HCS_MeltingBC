@@ -20,7 +20,7 @@ public:
 
 public:
 
-	void init_MassBal(chemkin SR,double yk_0);
+	void init_MassBal(chemkin SR);
 	void solveMassBal(chemkin SR, double rho_w, vector<double> x);
 
 };

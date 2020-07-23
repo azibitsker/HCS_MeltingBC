@@ -16,8 +16,8 @@
 int main(){   
 
     // ---------To be replaced by CFD simulation---------------------
-    double t = 2;// simulation time [sec]
-    double dt =1e-3; // t / Nt; // s
+    double t = 1;// simulation time [sec]
+    double dt =1e-4; // t / Nt; // s
     double qdot_i=2e6;
     double ti = 0;
     int ntSkip = 1;
@@ -31,7 +31,7 @@ int main(){
 
     int numPtsPerRay_mr = 60;
     double T0_mr = 300;
-    int i = 1;
+    int ts = 1;
     int p = 6;
     //---------------------Solid conduction----------------------------------------
 
@@ -65,13 +65,13 @@ int main(){
     //-----------------------------
     while (ti <= t-dt) {        
 
-        ti = i * dt;       
+        ti = ts * dt;       
         
          // Solve heat conduction equation and assess recession rate 
-        mr.SolveCondRays(qdot_mr, numPtsPerRay_mr, dt);
+        mr.SolveCondRays(qdot_mr, numPtsPerRay_mr, dt,ts);
         ///////////////////////////////////////////////////////////////          
 
-        if (i % ntSkip == 0)
+        if (ts % ntSkip == 0)
         {       
 
             // Write temperature data into file    
@@ -81,7 +81,7 @@ int main(){
             BoundaryFile << endl;
 
             // Write the recession rate into file
-            RecessionRateFile << mr.rays[0].sdot_out<< endl;
+            RecessionRateFile << mr.rays[0].sdot_out*1e3<< endl;
             TimeFile << ti << endl;
 
             TempFile << setprecision(p) << (mr.rays[0].f0[0]+ mr.rays[0].f0[1] )/2; // front surface temperature
@@ -90,7 +90,7 @@ int main(){
             TempFile << endl;
         }
 
-        i++;
+        ts++;
 
     }
 

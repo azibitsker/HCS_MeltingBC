@@ -13,12 +13,14 @@ class solidCond_Ray {
 public:
 
     int m = 0; //  0: Cartesian, 1: Cylindrical, 2: Spherical
-    bool IterSdot = false;
+    bool IterSdot = true;
     bool SteadyStateSdot = false;
-    bool PureCond = true; 
+    bool PureCond = false; 
     bool GeomGrid = true;
+
+    int timeStep;
     double knownRecessionRate = 4e-4;
-    double F = 1.3; // cell size increase ratio
+    double F = 1.15; // cell size increase ratio
     double k = 0.2, rho = 2000, Cp = 1000; // material properties
     double Tm = 800; // [K] material melting temperature
     double Qstar = 2e6; // [J/kgK] heat of ablation
@@ -34,7 +36,7 @@ public:
   
 
 public:
-    void HeatCondSolver(double qdot_in,int Nx, double dt);
+    void HeatCondSolver(double qdot_in,int Nx, double dt,int ts);
     void EvaluateTemp(vector<double>& f, vector<double>& grid,  double qdot0, double sdot0, double dt, const int Nx);
     void GenerateGeomGrid(const int Nx);
     void GenerateUniformGrid(int Nx);

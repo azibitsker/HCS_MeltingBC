@@ -19,7 +19,7 @@ public:
 public:    
     
     void Init_mr(int numRays, int numPtsPerRay_in, double T0_in);
-    void SolveCondRays(vector<double> qdot_in, int numPtsPerRay_in, double dt_in);
+    void SolveCondRays(vector<double> qdot_in, int numPtsPerRay_in, double dt_in, int ts);
 
 };
 

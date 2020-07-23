@@ -13,7 +13,7 @@ void materialResponse::Init_mr(int numRays, int numPtsPerRay_in, double T0_in)
 
 }
 
-void materialResponse::SolveCondRays(vector<double> qdot_in, int numPtsPerRay_in, double dt_in)
+void materialResponse::SolveCondRays(vector<double> qdot_in, int numPtsPerRay_in, double dt_in, int ts)
 {
 
     int Nx = numPtsPerRay_in;
@@ -25,7 +25,7 @@ void materialResponse::SolveCondRays(vector<double> qdot_in, int numPtsPerRay_in
 
     for (int r = 0; r < nRays; ++r)
     {
-        rays[r].HeatCondSolver(qdot_in[r], Nx, timeInc);
+        rays[r].HeatCondSolver(qdot_in[r], Nx, timeInc, ts);
 
     }
 

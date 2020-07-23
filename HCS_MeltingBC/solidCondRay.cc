@@ -2,9 +2,10 @@
 #include "materialResponse.h"
 
 
-void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt) {
+void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt,int ts) {
     
     
+    timeStep = ts;
     double sdot=0; // computed recession rate  
     double sdot0 = 0;
     double sdot_g = 0;
@@ -337,7 +338,7 @@ void solidCond_Ray::Get_abcd_coeff(vector<double>& grid, double qdot0, double sd
     
 
 
-}
+ }
 // Solver linear system of equations using Thomas algorithm
 void  solidCond_Ray::SolveTDMA(vector<double>& f, vector<double>& a, vector<double>& b, vector<double>& c, vector<double>& d, const int Nx) {
 

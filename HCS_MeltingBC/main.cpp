@@ -14,9 +14,9 @@
 int main(){   
 
     // ---------To be replaced by CFD simulation---------------------
-    double t = 1;// simulation time [sec]
-    double dt =1e-4; // t / Nt; // s
-    double qdot_i=1e5;
+    double t = 1000e-6;// simulation time [sec]
+    double dt =1e-6; // t / Nt; // s
+    double qdot_i=2167000;
     double ti = 0;
     
 
@@ -27,7 +27,7 @@ int main(){
     //-------------------------------------------------------------------
 
     int numPtsPerRay_mr = 60;
-    double T0_mr =300;
+    double T0_mr =297;
     int ns = 1;
 
     //---------------------Solid conduction----------------------------------------

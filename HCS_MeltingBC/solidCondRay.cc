@@ -17,7 +17,7 @@ void solidCond_Ray::HeatCondSolver(double qdot_in, int Nx, double dt, int ts) {
     vector<double> f(Nx + 2); // current temperature state vector
     for (int j = 0; j < Nx + 2; j++) { f[j] = f0[j]; }  
         
-    double p_eta = 35560; // 1e-2 * 101350.; // stagnation pressure
+    double p_eta = 58890; // 1e-2 * 101350.; // stagnation pressure
 
     // convergence parameters
     double norm_yk0 = 0;

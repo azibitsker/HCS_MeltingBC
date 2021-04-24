@@ -22,7 +22,7 @@ public:
 	double mdot_w; // // overall flux of species out of the control volume
 	vector<double> mdot_k; // vector of individual species mass flux
 	vector<double> Mw_s; //molar weight of each species
-	vector<double> yk_f = {0., 78.0 / 100, 21. / 100, 1./100 };  // mass fraction of species in the fluid cell {C10H12O N2 O2 Ar}
+	vector<double> yk_f = {0.0024, 0.7781, 0.2195, 0. };  // mass fraction of species in the fluid cell {C10H12O N2 O2 Ar}
 	
 	// Molar masses of species [kg/mol]	
 	double M_c10h16o = 152.2334e-3, M_n2 = 28.e-3, M_o2 = 32.e-3,  M_ar = 39.948e-3;

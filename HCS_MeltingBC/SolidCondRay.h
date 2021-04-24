@@ -13,11 +13,11 @@ class solidCond_Ray {
 
 public:
 
-    double Rout = 0.03;
+    double Rout = 0.0175;
     double Rin = 0;
     double L0 = Rout-Rin; // initial material length
     double F = 1.15; // cell size increase ratio  
-    int m = 0;
+    int m = 2;
     int numRays = 1;
     int timeStep;    
     
@@ -34,7 +34,7 @@ public:
     double Epsilon = 0.84;
     double sigma = 5.670374e-8; // [W/m^2K^4]
     double pi = 3.14;
-    double T_inf = 297; // ambient temperature
+    double T_inf = 61; // ambient temperature
 
     double t_check = 0;
     int i_check = 1; 
